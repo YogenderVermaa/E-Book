@@ -1,0 +1,109 @@
+# Ignore node_modules everywhere
+**/node_modules/
+
+# Ignore logs everywhere
+*.log
+**/logs/
+
+# Ignore environment files everywhere
+*.env
+**/.env
+
+**/dist/
+**/build/
+node_modules/
+**/node_modules/
+
+.env
+.env.*
+backend/.env
+frontend/.env
+*.local
+
+logs/
+backend/logs/
+frontend/logs/
+*.log
+*.log.*
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Ignore PM2 logs if using PM2
+.pm2/
+
+# Hidden audit files created by logger
+**/*-audit.json
+**/.*-audit.json
+
+# ---------------------------
+# Build output
+# ---------------------------
+dist/
+dist*/
+build/
+build*/
+out/
+.next/
+.nextcache/
+.vercel/
+.vercel_build_output/
+
+export/
+
+# ---------------------------
+.DS_Store
+Thumbs.db
+*.tmp
+*.swp
+
+.husky/_/
+lint-staged.config.js
+.prettierignore
+.eslintcache
+
+backend/uploads/
+uploads/
+
+# ---------------------------
+# Cache
+# ---------------------------
+.cache/
+.next/cache/
+pnp.js
+.pnp.js
+.pnp/
+.pnp.cjs
+.pnp.loader.mjs
+.vscode/
+
+# ---------------------------
+# Editor files
+# ---------------------------
+*.sublime-workspace
+*.sublime-project
+
+# ---------------------------
+# Coverage reports
+# ---------------------------
+coverage/
+*.lcov
+
+# ---------------------------
+# Docker
+# ---------------------------
+docker-data/
+docker-cache/
+.docker/
+
+*.pid
+*.pid.lock
+backend/temp/
+temp/
+
+**/.cache/
+**/.eslintcache
+**/.prettiercache
+
+.DS_Store
+Thumbs.db
