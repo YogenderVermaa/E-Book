@@ -9,8 +9,8 @@ importers:
   .:
     dependencies:
       '@google/genai':
-        specifier: ^1.31.0
-        version: 1.31.0
+        specifier: ^1.32.0
+        version: 1.32.0
       bcryptjs:
         specifier: ^3.0.3
         version: 3.0.3
@@ -67,11 +67,11 @@ packages:
   '@dabh/diagnostics@2.0.8':
     resolution: {integrity: sha512-R4MSXTVnuMzGD7bzHdW2ZhhdPC/igELENcq5IjEverBvq5hn1SXCWcsi6eSsdWP0/Ur+SItRRjAktmdoX/8R/Q==}
 
-  '@google/genai@1.31.0':
-    resolution: {integrity: sha512-rK0RKXxNkbK35eDl+G651SxtxwHNEOogjyeZJUJe+Ed4yxu3xy5ufCiU0+QLT7xo4M9Spey8OAYfD8LPRlYBKw==}
+  '@google/genai@1.32.0':
+    resolution: {integrity: sha512-46vaEaHAThIBlqWFTti1fo3xYU6DwCOwnIIotLhYUbNha90wk5cZL79zdf+NoAfKVsx4DPmjCtXvbQNNVPl5ZQ==}
     engines: {node: '>=20.0.0'}
     peerDependencies:
-      '@modelcontextprotocol/sdk': ^1.20.1
+      '@modelcontextprotocol/sdk': ^1.24.0
     peerDependenciesMeta:
       '@modelcontextprotocol/sdk':
         optional: true
@@ -1124,7 +1124,7 @@ snapshots:
       enabled: 2.0.0
       kuler: 2.0.0
 
-  '@google/genai@1.31.0':
+  '@google/genai@1.32.0':
     dependencies:
       google-auth-library: 10.5.0
       ws: 8.18.3
