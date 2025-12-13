@@ -1,39 +1,56 @@
-import { Book } from '../models/Book.model.js';
+import { Book, Chapter } from '../models/Book.model.js';
 import { ApiError } from '../utils/api-error.js';
 import { ApiResponse } from '../utils/api-response.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 
+// CREATE BOOK
 const createBook = asyncHandler(async (req, res) => {
   const { title, author, subtitle, chapters } = req.body;
+
   if (!title || !author) {
-    throw new ApiError(400, 'title and authors name required');
+    throw new ApiError(400, "title and author's name required");
   }
 
+  if (!Array.isArray(chapters) || chapters.length === 0) {
+    throw new ApiError(400, 'chapters array is required');
+  }
+
+  // Create chapter documents
+  const chapterDocs = await Promise.all(
+    chapters.map(async (ch) => {
+      return await Chapter.create({
+        title: ch.title,
+        description: ch.description || '',
+        content: ch.content || '', // ✅ FIXED!
+      });
+    })
+  );
+
+  // Get chapter IDs
+  const chapterIds = chapterDocs.map((c) => c._id);
+
+  // Create book
   const book = await Book.create({
-    userId: req.user_id,
+    userId: req.user._id,
     title,
     author,
     subtitle,
-    chapters,
+    chapters: chapterIds,
   });
 
-  if (!book) {
-    throw new ApiError(500, 'Something went wrong while createing book');
-  }
-
-  return res.status(201, book, 'Book created SuccessFully');
+  return res.status(201).json(new ApiResponse(201, book, 'Book created successfully'));
 });
 
+// GET ALL BOOKS
 const getBooks = asyncHandler(async (req, res) => {
-  const books = (await Book.find({ userId: req.user?._id })).toSorted({ createdAt: -1 });
-  if (!books) {
-    throw new ApiError(404, 'NO books found');
-  }
+  const books = await Book.find({ userId: req.user?._id }).sort({ createdAt: -1 });
 
-  return res.status(200, books, 'fatched books successfully');
+  return res.status(200).json(new ApiResponse(200, books, 'Books fetched successfully'));
 });
+
+// GET BOOK BY ID
 const getBookById = asyncHandler(async (req, res) => {
-  const book = await Book.findById(req.params.id);
+  const book = await Book.findById(req.params.id).populate('chapters'); // ✅ FIXED
 
   if (!book) {
     throw new ApiError(404, 'Book not found');
@@ -43,14 +60,14 @@ const getBookById = asyncHandler(async (req, res) => {
     throw new ApiError(401, 'Not authorized to see this book');
   }
 
-  return res.json(200, book, 'Book fatched successfully');
+  return res.status(200).json(new ApiResponse(200, book, 'Book fetched successfully'));
 });
 
+// UPDATE BOOK
 const updateBook = asyncHandler(async (req, res) => {
   const book = await Book.findById(req.params.id);
-  if (!book) {
-    throw new ApiError(404, 'Book not found');
-  }
+
+  if (!book) throw new ApiError(404, 'Book not found');
 
   if (book.userId.toString() !== req.user._id.toString()) {
     throw new ApiError(401, 'Not authorized to update this book');
@@ -60,21 +77,16 @@ const updateBook = asyncHandler(async (req, res) => {
     new: true,
   });
 
-  if (!updatedBook) {
-    throw new ApiError('400', 'Book update failed');
-  }
-
   return res.status(200).json(new ApiResponse(200, updatedBook, 'Book updated successfully'));
 });
 
+// UPDATE COVER
 const updateCover = asyncHandler(async (req, res) => {
-  const book = await Book.findById(req.params?.id);
-  if (!book) {
-    throw new ApiError(404, 'Book not found');
-  }
+  const book = await Book.findById(req.params.id);
+  if (!book) throw new ApiError(404, 'Book not found');
 
-  if (book.userId.toString !== req.user._id.toString()) {
-    throw new ApiError(401, 'Not authrized to update this book');
+  if (book.userId.toString() !== req.user._id.toString()) {
+    throw new ApiError(401, 'Not authorized');
   }
 
   if (!req.file) {
@@ -83,32 +95,25 @@ const updateCover = asyncHandler(async (req, res) => {
 
   const updatedCover = await Book.findByIdAndUpdate(
     req.params.id,
-    {
-      coverImage: req.file.path,
-    },
-    {
-      new: true,
-    }
+    { coverImage: req.file.path },
+    { new: true }
   );
 
-  return res
-    .status(200)
-    .json(new ApiResponse(200, updatedCover, 'Cover Image Updated Successfully'));
+  return res.status(200).json(new ApiResponse(200, updatedCover, 'Cover updated successfully'));
 });
 
+// DELETE BOOK
 const deleteBook = asyncHandler(async (req, res) => {
-  const book = await Book.findById(req.param?.id);
-  if (!book) {
-    throw new ApiError(404, 'Book not found');
-  }
+  const book = await Book.findById(req.params.id); // ✅ FIXED
+  if (!book) throw new ApiError(404, 'Book not found');
 
-  if (book.userId.toString() !== req.user?._id.toString()) {
-    throw new ApiError(401, 'Not authorized to delete this book');
+  if (book.userId.toString() !== req.user._id.toString()) {
+    throw new ApiError(401, 'Not authorized');
   }
 
   await book.deleteOne();
 
-  return res.status(200).json(new ApiResponse(200, null, 'Book Deleted Successfully'));
+  return res.status(200).json(new ApiResponse(200, null, 'Book deleted successfully'));
 });
 
 export { createBook, updateBook, getBooks, updateCover, deleteBook, getBookById };

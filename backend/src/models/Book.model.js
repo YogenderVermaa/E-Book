@@ -45,10 +45,12 @@ const bookSchema = new mongoose.Schema(
       type: String,
       default: '',
     },
-    chapters: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'Chapter',
-    },
+    chapters: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Chapter',
+      },
+    ],
     status: {
       type: String,
       enum: ['draft', 'published'],

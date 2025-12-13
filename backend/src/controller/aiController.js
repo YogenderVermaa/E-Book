@@ -72,6 +72,47 @@ const generateOutline = asyncHandler(async (req, res) => {
   return res.status(200).json(new ApiResponse(200, { outline }, 'Ai Response'));
 });
 
-const generateChapterContent = asyncHandler(async (req, res) => {});
+const generateChapterContent = asyncHandler(async (req, res) => {
+  const { chapterTitle, chapterDescriptioin, style } = req.body;
+
+  if (!chapterTitle) {
+    throw new ApiError(400, 'Please Provide the chapter title');
+  }
+
+  const prompt = `Yor are a expert writer specalizing in ${style} content.Write a complete chapter for a book with the following specifications: 
+    chapter Title = "${chapterTitle}"
+    ${chapterTitle ? `Chapter Description : ${chapterDescriptioin}` : ''}
+    Writing Style : ${style}
+    Target Length: Comprehensive and detailed (aim for 1500-2500 words)
+
+    Requirements:
+    1. Write in a ${style.toLowerCase()} tone throughout the chapter
+    2.Structure the content with clear sections and smooth transitions
+    4.Ensure the content flows logically for Introduction to conslustion
+    5.Make the content engaging and valuable to readers
+    ${chapterDescriptioin ? '6. Cover all points mentioned in the chapter description' : ''}
+
+    Format Guidelines: 
+    -Start with a compelling opening paragraph
+    -Use clear paragraph breaks for readability
+    -Include subheadings if appropriate for the content length
+    -End with a strong conclusion or transition to the next chapter
+    -Write in plain text without markdown formatting
+
+
+    Begin writing the chapter content now:`;
+
+  const response = await ai.models.generateContent({
+    model: 'gemini-2.5-flash-lite',
+    contents: prompt,
+  });
+  if (!response) {
+    throw new Error(500, 'Failed to generate content');
+  }
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, { content: response.text }, 'Genereated content successfully'));
+});
 
 export { generateOutline, generateChapterContent };
