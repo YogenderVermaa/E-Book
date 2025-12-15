@@ -1,5 +1,3 @@
-export const BASE_URL = '';
-
 export const API_PATHS = {
   AUTH: {
     REGISTER: '/api/auth/register',

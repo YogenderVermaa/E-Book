@@ -1,9 +1,8 @@
 /* eslint-env browser */
 import axios from 'axios';
-import { BASE_URL } from './apiPath';
 
 const axiosInstance = axios.create({
-  baseURL: BASE_URL,
+  baseURL: import.meta.env.VITE_API_BASE_URL,
   timeout: 80000,
   headers: {
     'Content-Type': 'application/json',
@@ -39,3 +38,5 @@ axiosInstance.interceptors.response.use(
     }
   }
 );
+
+export default axiosInstance;
