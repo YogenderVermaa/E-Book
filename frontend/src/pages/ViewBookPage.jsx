@@ -1,7 +1,7 @@
 import React from 'react';
 
-function ViewBookPage() {
+const ViewBookPage = () => {
   return <div>ViewBookPage</div>;
-}
+};
 
 export default ViewBookPage;

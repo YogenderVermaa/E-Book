@@ -1,7 +1,7 @@
 import React from 'react';
 
-function DashBoardLayout() {
+const DashBoardLayout = () => {
   return <div>DashBoardLayout</div>;
-}
+};
 
 export default DashBoardLayout;

@@ -1,7 +1,7 @@
 import React from 'react';
 
-function EditorPage() {
+const EditorPage = () => {
   return <div>EditorPage</div>;
-}
+};
 
 export default EditorPage;
