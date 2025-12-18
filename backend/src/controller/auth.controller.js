@@ -21,21 +21,20 @@ const registerUser = asyncHandler(async (req, res) => {
   });
 
   const user = await User.findById(newUser?._id).select('-password');
-  const token = user.generateToken();
-
   if (!user) {
     throw new ApiError(500, 'Registration Failed');
   }
+  const token = user.generateToken();
 
   const options = {
-    secure: true,
+    secure: false,
     httpOnly: true,
   };
 
   return res
     .status(201)
     .cookie('token', token, options)
-    .json(new ApiResponse(201, { user }, 'User created successfully'));
+    .json(new ApiResponse(201, { user, token }, 'User created successfully'));
 });
 
 const loginUser = asyncHandler(async (req, res) => {
@@ -52,7 +51,7 @@ const loginUser = asyncHandler(async (req, res) => {
   const isPassCorrect = await user.matchPassword(password);
   const token = user.generateToken();
   const options = {
-    httpOnly: true,
+    httpOnly: false,
     secure: true,
   };
   if (!isPassCorrect) {

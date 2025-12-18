@@ -22,17 +22,19 @@ const SignupPage = () => {
     setIsloading(true);
     try {
       const response = await axiosInstance.post(API_PATHS.AUTH.REGISTER, formData);
-      const { token } = response.data;
+      const { token } = response.data.data;
+      console.log('Response:::::', response);
 
       const profileResponse = await axiosInstance.get(API_PATHS.AUTH.GET_PROFILE, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      login(profileResponse.data, token);
+      login(profileResponse.data.data, token);
       toast.success('Account created successfully!');
       navigate('/dashboard');
     } catch (error) {
-      toast.error(error.respones?.data?.message || 'Signup failed.Please try again');
+      console.log(error.response);
+      toast.error(error.response?.data?.message || 'Signup failed.Please try again');
     } finally {
       setIsloading(false);
     }
