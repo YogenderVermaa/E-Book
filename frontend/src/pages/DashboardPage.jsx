@@ -4,10 +4,21 @@ import toast from 'react-hot-toast';
 import { Plus, Book } from 'lucide-react';
 
 import DashBoardLayout from '../components/layout/DashBoardLayout';
+import BookCard from '../components/card/BookCard';
 import Button from '../components/ui/Button';
 import { useAuth } from '../context/AuthContext';
 import axiosInstance from '../utils/axiosInstance';
 import { API_PATHS } from '../utils/apiPath';
+
+const BookCardSkull = () => (
+  <div className="">
+    <div className=""></div>
+    <div className="">
+      <div className=""></div>
+      <div className=""></div>
+    </div>
+  </div>
+);
 
 const DashboardPage = () => {
   const [books, setBooks] = useState([]);
@@ -21,7 +32,7 @@ const DashboardPage = () => {
     const fetchBooks = async () => {
       try {
         const response = await axiosInstance.get(API_PATHS.BOOKS.GET_BOOK);
-        setBooks(response.data);
+        setBooks(Array.isArray(response.data.data) ? response.data.data : []);
       } catch (error) {
         toast.error('Failed to fetch your eBooks');
       } finally {
@@ -55,6 +66,30 @@ const DashboardPage = () => {
             Create New eBook
           </Button>
         </div>
+        {isLoading ? (
+          <div className="">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <BookCardSkull key={i} />
+            ))}
+          </div>
+        ) : books.length === 0 ? (
+          <div className="">
+            <div className="">
+              <Book className="" />
+            </div>
+            <h3 className="">No ebooks found</h3>
+            <p className="">You haven't created any eBooks yet, Get started by your first Book</p>
+            <Button onClick={handleCreatedBookClick} icon={Plus}>
+              Create your first book
+            </Button>
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {books.map((book) => (
+              <BookCard key={book._id} book={book} onDelete={() => setBookToDelete(book._id)} />
+            ))}
+          </div>
+        )}
       </div>
     </DashBoardLayout>
   );

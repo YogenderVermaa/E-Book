@@ -49,14 +49,14 @@ const loginUser = asyncHandler(async (req, res) => {
   }
 
   const isPassCorrect = await user.matchPassword(password);
+  if (!isPassCorrect) {
+    throw new ApiError(401, 'Invalid Credentials');
+  }
   const token = user.generateToken();
   const options = {
     httpOnly: false,
     secure: true,
   };
-  if (!isPassCorrect) {
-    throw new ApiError(401, 'Invalid Credentials');
-  }
 
   return res
     .status(200)
@@ -77,6 +77,9 @@ const loginUser = asyncHandler(async (req, res) => {
 
 const getProfile = asyncHandler(async (req, res) => {
   const user = req.user;
+  if (!user) {
+    throw new ApiError(404, 'User not found');
+  }
   res.status(200).json(
     new ApiResponse(
       200,

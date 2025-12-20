@@ -21,7 +21,7 @@ const LoginPage = () => {
     setIsLoading(true);
     try {
       const response = await axiosInstance.post(API_PATHS.AUTH.LOGIN, formData);
-      const { token } = response.data;
+      const { token } = response.data.data;
       const profileResponse = await axiosInstance.get(API_PATHS.AUTH.GET_PROFILE, {
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -36,49 +36,60 @@ const LoginPage = () => {
     }
   };
   return (
-    <div className="">
-      <div className="">
-        <div className="">
-          <div className="">
-            <BookOpen className="" />
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 px-4">
+      <div className="w-full max-w-md bg-slate-900/80 backdrop-blur border border-slate-800 rounded-2xl shadow-xl p-8">
+        {/* Header */}
+        <div className="text-center mb-8">
+          <div className="mx-auto mb-4 w-14 h-14 flex items-center justify-center rounded-xl bg-indigo-600/10 border border-indigo-500/20">
+            <BookOpen className="w-7 h-7 text-indigo-400" />
           </div>
-          <h1 className="">Welcome back</h1>
-          <p>Sign in to continue</p>
+          <h1 className="text-2xl font-semibold text-white">Welcome back</h1>
+          <p className="text-sm text-slate-400 mt-1">Sign in to continue</p>
         </div>
 
-        <div className="">
-          <form onSubmit={handleSubmit} className="">
-            <InputField
-              label="Email"
-              name="email"
-              type="email"
-              placeholder="you@gmail.com"
-              icon={Mail}
-              value={formData.email}
-              onChange={handleChange}
-              required
-            />
-            <InputField
-              label="Password"
-              name="password"
-              type="password"
-              placeholder="*********"
-              icon={Lock}
-              value={formData.password}
-              onChange={handleChange}
-              required
-            />
-            <Button type="submit" isLoading={isLoading} className="">
-              Sign In
-            </Button>
-          </form>
-          <p>
-            Don't have an account?{''}
-            <Link to="/signup" className="">
-              Sign up
-            </Link>
-          </p>
-        </div>
+        {/* Form */}
+        <form onSubmit={handleSubmit} className="space-y-5">
+          <InputField
+            label="Email"
+            name="email"
+            type="email"
+            placeholder="you@gmail.com"
+            icon={Mail}
+            value={formData.email}
+            onChange={handleChange}
+            required
+          />
+
+          <InputField
+            label="Password"
+            name="password"
+            type="password"
+            placeholder="••••••••"
+            icon={Lock}
+            value={formData.password}
+            onChange={handleChange}
+            required
+          />
+
+          <Button
+            type="submit"
+            isLoading={isLoading}
+            className="w-full bg-indigo-600 hover:bg-indigo-700 transition-colors rounded-xl py-2.5 font-medium"
+          >
+            Sign In
+          </Button>
+        </form>
+
+        {/* Footer */}
+        <p className="text-center text-sm text-slate-400 mt-6">
+          Don&apos;t have an account?{' '}
+          <Link
+            to="/signup"
+            className="text-indigo-400 hover:text-indigo-300 font-medium transition-colors"
+          >
+            Sign up
+          </Link>
+        </p>
       </div>
     </div>
   );
