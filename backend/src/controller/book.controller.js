@@ -15,13 +15,12 @@ const createBook = asyncHandler(async (req, res) => {
     throw new ApiError(400, 'chapters array is required');
   }
 
-  // Create chapter documents
   const chapterDocs = await Promise.all(
     chapters.map(async (ch) => {
-      return await Chapter.create({
+      return Chapter.create({
         title: ch.title,
         description: ch.description || '',
-        content: ch.content || '', // ✅ FIXED!
+        content: ch.content || '',
       });
     })
   );
@@ -38,7 +37,7 @@ const createBook = asyncHandler(async (req, res) => {
     chapters: chapterIds,
   });
 
-  return res.status(201).json(new ApiResponse(201, book, 'Book created successfully'));
+  return res.status(201).json(new ApiResponse(201, { book }, 'Book created successfully'));
 });
 
 // GET ALL BOOKS

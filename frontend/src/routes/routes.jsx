@@ -9,6 +9,7 @@ import ProtectedRoutes from '../components/auth/ProtectedRoutes';
 import EditorPage from '../pages/EditorPage';
 import ViewBookPage from '../pages/ViewBookPage';
 import ProfilePage from '../pages/ProfilePage';
+import DashBoardLayout from '../components/layout/DashBoardLayout';
 
 export const router = createBrowserRouter(
   createRoutesFromElements(
