@@ -1,4 +1,4 @@
-import { BookOpen, Twitter, Linkedin, Github, Book } from 'lucide-react';
+import { BookOpen, Twitter, Linkedin, Github } from 'lucide-react';
 
 const Footer = () => {
   return (

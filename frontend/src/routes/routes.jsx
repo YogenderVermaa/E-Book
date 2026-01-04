@@ -9,8 +9,7 @@ import ProtectedRoutes from '../components/auth/ProtectedRoutes';
 import EditorPage from '../pages/EditorPage';
 import ViewBookPage from '../pages/ViewBookPage';
 import ProfilePage from '../pages/ProfilePage';
-import DashBoardLayout from '../components/layout/DashBoardLayout';
-
+import PublicRoute from '../components/auth/PublicRoute';
 export const router = createBrowserRouter(
   createRoutesFromElements(
     <Route>
@@ -18,8 +17,22 @@ export const router = createBrowserRouter(
         <Route index element={<LandingPage />} />
       </Route>
       <Route element={<AuthLayout />}>
-        <Route path="login" element={<LoginPage />} />
-        <Route path="signup" element={<SignupPage />} />
+        <Route
+          path="login"
+          element={
+            <PublicRoute>
+              <LoginPage />
+            </PublicRoute>
+          }
+        />
+        <Route
+          path="signup"
+          element={
+            <PublicRoute>
+              <SignupPage />
+            </PublicRoute>
+          }
+        />
       </Route>
       <Route
         path="/dashboard"

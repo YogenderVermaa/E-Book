@@ -29,9 +29,13 @@ export default [
       'react-hooks': hooks,
     },
     rules: {
+      ...react.configs.recommended.rules,
+      ...react.configs['jsx-runtime']?.rules,
       'no-undef': 'error',
       'no-unused-vars': 'warn',
       'react/react-in-jsx-scope': 'off', // React 17+
+      'react/prop-types': 'off',
+      'react/no-unescaped-entities': 'off',
       ...hooks.configs.recommended.rules,
     },
     settings: {

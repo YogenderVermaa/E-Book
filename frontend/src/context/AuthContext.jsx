@@ -1,32 +1,35 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 
-const AuthContext = createContext();
+const AuthContext = createContext(null);
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) {
-    throw new Error('Auth Context Error');
+    throw new Error('useAuth must be used within AuthProvider');
   }
   return context;
 };
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
-  useEffect(() => {
-    checkAuthStatus();
-  }, []);
-
-  const checkAuthStatus = async () => {
+  const checkAuthStatus = useCallback(() => {
     try {
       const token = localStorage.getItem('token');
-      const userstr = localStorage.getItem('user');
-      if (token && user) {
-        const userData = JSON.parse(userstr);
-        setUser(userData);
+      const userStr = localStorage.getItem('user');
+
+      if (token && userStr) {
+        const parsed = JSON.parse(userStr);
+
+        const actualUser = parsed.data ?? parsed;
+
+        setUser(actualUser);
         setIsAuthenticated(true);
+      } else {
+        setUser(null);
+        setIsAuthenticated(false);
       }
     } catch (error) {
       console.error('Auth check failed:', error);
@@ -34,28 +37,35 @@ export const AuthProvider = ({ children }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    checkAuthStatus();
+  }, [checkAuthStatus]);
 
   const login = (userData, token) => {
+    const actualData = userData.data ?? userData;
     localStorage.setItem('token', token);
-    localStorage.setItem('user', JSON.stringify(userData));
+    localStorage.setItem('user', JSON.stringify(actualData));
 
-    setUser(userData);
+    setUser(actualData);
     setIsAuthenticated(true);
   };
 
   const logout = () => {
-    (localStorage.removeItem('token'), localStorage.removeItem('refreshToken'));
+    localStorage.removeItem('token');
     localStorage.removeItem('user');
+
     setUser(null);
     setIsAuthenticated(false);
-    window.location.href = '/';
   };
+
   const updateUser = (updatedUser) => {
     const newUserData = { ...user, ...updatedUser };
     localStorage.setItem('user', JSON.stringify(newUserData));
     setUser(newUserData);
   };
+
   const value = {
     user,
     loading,

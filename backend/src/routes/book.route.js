@@ -16,6 +16,6 @@ router.use(verifyJWT);
 
 router.route('/').post(createBook).get(getBooks);
 router.route('/:id').get(getBookById).put(updateBook).delete(deleteBook);
-router.route('/cover/:id').put(upload, updateCover);
+router.route('/cover/:id').put(upload.single('coverImage'), updateCover);
 
 export default router;

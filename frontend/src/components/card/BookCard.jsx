@@ -3,9 +3,7 @@ import { Edit, Trash2, BookOpen } from 'lucide-react';
 
 const BookCard = ({ book, onDelete }) => {
   const navigate = useNavigate();
-  const coverImageUrl = book.coverImage
-    ? `${import.meta.env.VITE_API_BASE_URL}/backend${book.coverImage}`.replace(/\\/g, '/')
-    : '';
+  const coverImageUrl = book.coverImage || '';
 
   return (
     <div

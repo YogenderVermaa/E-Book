@@ -7,7 +7,6 @@ import DashBoardLayout from '../components/layout/DashBoardLayout';
 import BookCard from '../components/card/BookCard';
 import CreateBookModal from '../components/models/CreateBookModal';
 import Button from '../components/ui/Button';
-import { useAuth } from '../context/AuthContext';
 import axiosInstance from '../utils/axiosInstance';
 import { API_PATHS } from '../utils/apiPath';
 
@@ -57,7 +56,6 @@ const DashboardPage = () => {
   const [isLoading, setIsloading] = useState(true);
   const [isCreateModelOpen, setIsCreateModalOpen] = useState(false);
   const [bookToDelete, setBookToDelete] = useState(null);
-  const { user } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -66,6 +64,7 @@ const DashboardPage = () => {
         const response = await axiosInstance.get(API_PATHS.BOOKS.GET_BOOK);
         setBooks(Array.isArray(response.data.data) ? response.data.data : []);
       } catch (error) {
+        console.error('Failed to fetch books', error);
         toast.error('Failed to fetch your eBooks');
       } finally {
         setIsloading(false);
@@ -98,11 +97,11 @@ const DashboardPage = () => {
 
   return (
     <DashBoardLayout>
-      <div className="min-h-screen bg-gray-50 p-6">
-        <div className="max-w-7xl mx-auto">
+      <div className="min-h-screen  bg-gray-50 p-6">
+        <div className="max-w-7xl mx-auto  ">
           {/* Header Section */}
-          <div className="flex justify-between items-start mb-8">
-            <div>
+          <div className="md:flex md:justify-between items-start mb-8">
+            <div className="flex flex-col gap-1 mb-4">
               <h1 className="text-3xl font-bold text-gray-900">All eBook</h1>
               <p className="text-sm text-slate-600 mt-1">
                 Create, edit, and manage all your AI-generated eBooks.

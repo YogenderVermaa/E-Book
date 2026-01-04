@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
-import { BookOpen, Menu, X, LogOut, User } from 'lucide-react';
+import { BookOpen, Menu, X, LogOut } from 'lucide-react';
 
-const ProfileDropdown = ({ isOpen, onToggle, avatar, companyName, email, userRole }) => (
+const ProfileDropdown = ({ isOpen, onToggle, companyName, email, userRole }) => (
   <div className="relative">
     <button
       onClick={onToggle}
@@ -80,7 +80,6 @@ const Navbar = () => {
                   e.stopPropagation();
                   setProfileDropdownOpen(!profileDropdownOpen);
                 }}
-                avatar={user?.avatar || ''}
                 companyName={user?.name || ''}
                 email={user?.email || ''}
                 userRole={user?.role || ''}

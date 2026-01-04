@@ -2,18 +2,22 @@ import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
 
-const uploadDir = 'uploads';
+const uploadDir = path.resolve('public', 'temp');
+
 if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir, { recursive: true });
+  fs.mkdirSync(uploadDir, {
+    recursive: true,
+  });
 }
 
 const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
+  destination: (req, file, cb) => {
     cb(null, uploadDir);
   },
-
-  filename: function (req, file, cb) {
-    cb(null, `${file.fieldname}-${Date.now()}${path.extname(file.originalname)}`);
+  filename: (req, file, cb) => {
+    const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
+    const ext = path.extname(file.originalname);
+    cb(null, `${file.fieldname}-${uniqueSuffix}${ext}`);
   },
 });
 
@@ -24,14 +28,14 @@ const imageFilter = (req, file, cb) => {
   if (allowedExt.includes(ext) && file.mimetype.startsWith('image/')) {
     cb(null, true);
   } else {
-    cb(new Error('only image files are allowed'), false);
+    cb(new Error('Only image files are allowed (jpg, jpeg, png, gif, webp)'), false);
   }
 };
 
 const upload = multer({
-  storage: storage,
+  storage,
   limits: { fileSize: 2 * 1024 * 1024 },
   fileFilter: imageFilter,
-}).single('coverImage');
+});
 
 export default upload;

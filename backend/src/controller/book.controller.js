@@ -2,6 +2,7 @@ import { Book, Chapter } from '../models/Book.model.js';
 import { ApiError } from '../utils/api-error.js';
 import { ApiResponse } from '../utils/api-response.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
+import { uploadOnCloudinary } from '../utils/cloudinary.js';
 
 // CREATE BOOK
 const createBook = asyncHandler(async (req, res) => {
@@ -72,9 +73,23 @@ const updateBook = asyncHandler(async (req, res) => {
     throw new ApiError(401, 'Not authorized to update this book');
   }
 
-  const updatedBook = await Book.findByIdAndUpdate(req.params.id, req.body, {
+  const { chapters, ...bookData } = req.body;
+  if (chapters && Array.isArray(chapters)) {
+    await Promise.all(
+      chapters.map(async (ch) => {
+        if (ch._id) {
+          await Chapter.findByIdAndUpdate(ch._id, {
+            title: ch.title,
+            desctiption: ch.description,
+            content: ch.content,
+          });
+        }
+      })
+    );
+  }
+  const updatedBook = await Book.findByIdAndUpdate(req.params.id, bookData, {
     new: true,
-  });
+  }).populate('chapters');
 
   return res.status(200).json(new ApiResponse(200, updatedBook, 'Book updated successfully'));
 });
@@ -91,10 +106,22 @@ const updateCover = asyncHandler(async (req, res) => {
   if (!req.file) {
     throw new ApiError(400, 'Cover image required');
   }
+  const coverImageLocalPath = req.file.path;
+  const normalizedCoverPath = coverImageLocalPath?.replace(/\\/g, '/');
+  if (!normalizedCoverPath) {
+    throw new ApiError(400, 'avatar file is missing');
+  }
+  let coverImage;
+  try {
+    coverImage = await uploadOnCloudinary(normalizedCoverPath);
+  } catch (err) {
+    console.log('Error uploading coverImage', err);
+    throw new ApiError(500, 'Failed to upload coverImage');
+  }
 
   const updatedCover = await Book.findByIdAndUpdate(
     req.params.id,
-    { coverImage: req.file.path },
+    { coverImage: coverImage?.url },
     { new: true }
   );
 
