@@ -8,14 +8,17 @@ import Button from '../components/ui/Button';
 import { useAuth } from '../context/AuthContext';
 import axiosInstance from '../utils/axiosInstance.js';
 import { API_PATHS } from '../utils/apiPath';
+
 const LoginPage = () => {
   const [formData, setFormData] = useState({ email: '', password: '' });
   const [isLoading, setIsLoading] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
+
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
@@ -26,70 +29,73 @@ const LoginPage = () => {
         headers: { Authorization: `Bearer ${token}` },
       });
       login(profileResponse.data, token);
-      toast.success('login successfull');
+      toast.success('Login successful');
       navigate('/dashboard');
     } catch (error) {
       localStorage.clear();
-      toast.error(error.response?.data?.message || 'Login failed.Please try again');
+      toast.error(error.response?.data?.message || 'Login failed. Please try again');
     } finally {
       setIsLoading(false);
     }
   };
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 px-4">
-      <div className="w-full max-w-md bg-slate-900/80 backdrop-blur border border-slate-800 rounded-2xl shadow-xl p-8">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-50 via-white to-purple-50 px-4">
+      <div className="w-full max-w-md">
         {/* Header */}
         <div className="text-center mb-8">
-          <div className="mx-auto mb-4 w-14 h-14 flex items-center justify-center rounded-xl bg-indigo-600/10 border border-indigo-500/20">
-            <BookOpen className="w-7 h-7 text-indigo-400" />
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-indigo-600 rounded-2xl mb-4 shadow-lg shadow-indigo-200">
+            <BookOpen className="w-8 h-8 text-white" />
           </div>
-          <h1 className="text-2xl font-semibold text-white">Welcome back</h1>
-          <p className="text-sm text-slate-400 mt-1">Sign in to continue</p>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Welcome back</h1>
+          <p className="text-gray-600">Sign in to continue your eBook journey</p>
         </div>
 
-        {/* Form */}
-        <form onSubmit={handleSubmit} className="space-y-5">
-          <InputField
-            label="Email"
-            name="email"
-            type="email"
-            placeholder="you@gmail.com"
-            icon={Mail}
-            value={formData.email}
-            onChange={handleChange}
-            required
-          />
+        {/* Form Card */}
+        <div className="bg-white rounded-2xl shadow-xl shadow-gray-200/50 p-8 border border-gray-100">
+          <form onSubmit={handleSubmit} className="space-y-5">
+            <InputField
+              label="Email"
+              name="email"
+              type="email"
+              placeholder="you@gmail.com"
+              icon={Mail}
+              value={formData.email}
+              onChange={handleChange}
+              required
+            />
 
-          <InputField
-            label="Password"
-            name="password"
-            type="password"
-            placeholder="••••••••"
-            icon={Lock}
-            value={formData.password}
-            onChange={handleChange}
-            required
-          />
+            <InputField
+              label="Password"
+              name="password"
+              type="password"
+              placeholder="••••••••"
+              icon={Lock}
+              value={formData.password}
+              onChange={handleChange}
+              required
+            />
 
-          <Button
-            type="submit"
-            isLoading={isLoading}
-            className="w-full bg-indigo-600 hover:bg-indigo-700 transition-colors rounded-xl py-2.5 font-medium"
-          >
-            Sign In
-          </Button>
-        </form>
+            <Button
+              type="submit"
+              isLoading={isLoading}
+              className="w-full mt-6 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 rounded-lg transition-colors duration-200 shadow-lg shadow-indigo-200"
+            >
+              Sign In
+            </Button>
+          </form>
 
-        {/* Footer */}
-        <p className="text-center text-sm text-slate-400 mt-6">
-          Don&apos;t have an account?{' '}
-          <Link
-            to="/signup"
-            className="text-indigo-400 hover:text-indigo-300 font-medium transition-colors"
-          >
-            Sign up
-          </Link>
-        </p>
+          {/* Footer */}
+          <p className="text-center text-gray-600 text-sm mt-6">
+            Don't have an account?{' '}
+            <Link
+              to="/signup"
+              className="text-indigo-600 font-semibold hover:text-indigo-700 transition-colors"
+            >
+              Sign up
+            </Link>
+          </p>
+        </div>
       </div>
     </div>
   );

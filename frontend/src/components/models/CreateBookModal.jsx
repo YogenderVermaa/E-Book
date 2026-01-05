@@ -125,9 +125,9 @@ const CreateBookModal = ({ isOpen, onClose, onBookCreated }) => {
       title="Create New eBook"
     >
       {step === 1 && (
-        <div className="space-y-5">
+        <div className="space-y-2">
           {/* Progress Indicator */}
-          <div className="flex items-center gap-2 mb-6">
+          <div className="flex items-center gap-2 mb-4">
             <div className="flex items-center justify-center w-10 h-10 rounded-full font-semibold bg-gradient-to-r from-violet-500 to-purple-600 text-white shadow-lg transform transition-all">
               1
             </div>
@@ -153,6 +153,7 @@ const CreateBookModal = ({ isOpen, onClose, onBookCreated }) => {
             onChange={(e) => setNumChapters(parseInt(e.target.value) || 1)}
             min="1"
             max="10"
+            className="cursor-pointer"
           />
           <InputField
             icon={Lightbulb}

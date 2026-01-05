@@ -14,14 +14,21 @@ export default [
       sourceType: 'module',
       parserOptions: {
         ecmaFeatures: {
-          jsx: true, // 🔥 THIS WAS MISSING
+          jsx: true,
         },
       },
       globals: {
+        // Browser globals
         window: 'readonly',
         document: 'readonly',
         localStorage: 'readonly',
         console: 'readonly',
+
+        // Timers (FIX for no-undef)
+        setTimeout: 'readonly',
+        clearTimeout: 'readonly',
+        setInterval: 'readonly',
+        clearInterval: 'readonly',
       },
     },
     plugins: {
@@ -31,12 +38,19 @@ export default [
     rules: {
       ...react.configs.recommended.rules,
       ...react.configs['jsx-runtime']?.rules,
+
+      // Core rules
       'no-undef': 'error',
       'no-unused-vars': 'warn',
+
+      // React rules
       'react/react-in-jsx-scope': 'off', // React 17+
       'react/prop-types': 'off',
       'react/no-unescaped-entities': 'off',
-      ...hooks.configs.recommended.rules,
+
+      // Hooks rules
+      'react-hooks/rules-of-hooks': 'error',
+      'react-hooks/exhaustive-deps': 'warn',
     },
     settings: {
       react: {
@@ -45,7 +59,9 @@ export default [
     },
   },
 
-  // ✅ BACKEND (Node.js)
+  // ===============================
+  // BACKEND (Node.js)
+  // ===============================
   {
     files: ['backend/**/*.js'],
     languageOptions: {

@@ -1,5 +1,4 @@
 import { BookOpen, Twitter, Linkedin, Github } from 'lucide-react';
-
 const Footer = () => {
   return (
     <footer className="bg-gray-900 text-white">
