@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { BookOpen, Menu, X, LogOut } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 const ProfileDropdown = ({ isOpen, onToggle, companyName, email, userRole }) => (
   <div className="relative">
@@ -86,18 +87,18 @@ const Navbar = () => {
               />
             ) : (
               <>
-                <a
-                  href="/login"
+                <Link
+                  to="/login"
                   className="px-5 py-2 text-sm font-semibold text-gray-700 hover:text-gray-900 rounded-xl hover:bg-gray-100 transition-all duration-200"
                 >
                   Login
-                </a>
-                <a
-                  href="/signup"
+                </Link>
+                <Link
+                  to="/signup"
                   className="px-5 py-2.5 text-sm font-semibold text-white bg-gradient-to-r from-orange-500 to-orange-600 rounded-xl hover:from-orange-600 hover:to-orange-700 shadow-lg shadow-orange-500/30 hover:shadow-orange-500/50 transition-all duration-200 transform hover:scale-105"
                 >
                   Get Started
-                </a>
+                </Link>
               </>
             )}
           </div>
