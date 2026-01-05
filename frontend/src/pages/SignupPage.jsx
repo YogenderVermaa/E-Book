@@ -25,7 +25,7 @@ const SignupPage = () => {
     try {
       const response = await axiosInstance.post(API_PATHS.AUTH.REGISTER, formData);
       const { token } = response.data.data;
-      console.log('Response:::::', response);
+      // console.log('Response:::::', response);
 
       const profileResponse = await axiosInstance.get(API_PATHS.AUTH.GET_PROFILE, {
         headers: { Authorization: `Bearer ${token}` },
@@ -35,7 +35,7 @@ const SignupPage = () => {
       toast.success('Account created successfully!');
       navigate('/dashboard');
     } catch (error) {
-      console.log(error.response);
+      // console.log(error.response);
       toast.error(error.response?.data?.message || 'Signup failed. Please try again');
     } finally {
       setIsloading(false);

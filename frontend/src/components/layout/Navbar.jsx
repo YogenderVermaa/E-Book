@@ -144,18 +144,18 @@ const Navbar = () => {
             </div>
           ) : (
             <div className="px-4 py-4 space-y-3">
-              <a
-                href="/login"
+              <Link
+                to="/login"
                 className="block w-full px-4 py-3 text-center text-sm font-semibold text-gray-700 bg-gray-100 rounded-xl hover:bg-gray-200 transition-all duration-200"
               >
                 Login
-              </a>
-              <a
-                href="/signup"
+              </Link>
+              <Link
+                to="/signup"
                 className="block w-full px-4 py-3 text-center text-sm font-semibold text-white bg-gradient-to-r from-orange-500 to-orange-600 rounded-xl hover:from-orange-600 hover:to-orange-700 shadow-lg shadow-orange-500/30 transition-all duration-200"
               >
                 Get Started
-              </a>
+              </Link>
             </div>
           )}
         </div>
