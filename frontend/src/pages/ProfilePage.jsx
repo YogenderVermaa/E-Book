@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { User, Mail, Check, AlertCircle } from 'lucide-react';
 
@@ -9,6 +10,7 @@ import { API_PATHS } from '../utils/apiPath';
 
 const ProfilePage = () => {
   const { user, updateUser, loading: authLoading } = useAuth();
+  const navigate = useNavigate();
 
   const [formData, setFormData] = useState({
     name: '',
@@ -56,9 +58,10 @@ const ProfilePage = () => {
         name: formData.name,
       });
 
-      updateUser(response.data.user ?? response.data);
+      updateUser(response.data.data ?? response.data);
       setSaveSuccess(true);
       toast.success('Profile updated successfully');
+      navigate('/dashboard', { replace: true });
     } catch (error) {
       toast.error(error.response?.data?.message || 'Failed to update profile');
     } finally {

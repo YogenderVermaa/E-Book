@@ -12,6 +12,7 @@ import { API_PATHS } from '../utils/apiPath';
 const LoginPage = () => {
   const [formData, setFormData] = useState({ email: '', password: '' });
   const [isLoading, setIsLoading] = useState(false);
+  const [errors, setErrors] = useState({ email: '', password: '', general: '' });
   const { login } = useAuth();
   const navigate = useNavigate();
 
@@ -22,6 +23,7 @@ const LoginPage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
+    setErrors({ email: '', password: '', general: '' });
     try {
       const response = await axiosInstance.post(API_PATHS.AUTH.LOGIN, formData);
       const { token } = response.data.data;
@@ -33,7 +35,35 @@ const LoginPage = () => {
       navigate('/dashboard');
     } catch (error) {
       localStorage.clear();
-      toast.error(error.response?.data?.message || 'Login failed. Please try again');
+
+      const status = error.response?.status;
+      const message =
+        error.response?.data?.message || 'Unable to login right now. Please try again.';
+      const normalized = message.toLowerCase();
+      let displayMessage = message;
+
+      if (status === 404 || normalized.includes('user not found')) {
+        const signupMessage = 'Email is not registered. Please signup first.';
+        setErrors({ email: signupMessage, password: '', general: '' });
+        displayMessage = signupMessage;
+      } else if (status === 401 || normalized.includes('invalid credentials')) {
+        const passwordMessage = 'Incorrect password. Please try again.';
+        setErrors({ email: '', password: passwordMessage, general: '' });
+        displayMessage = passwordMessage;
+      } else if (normalized.includes('email and password required')) {
+        setErrors({
+          email: !formData.email ? 'Email is required.' : '',
+          password: !formData.password ? 'Password is required.' : '',
+          general: '',
+        });
+        displayMessage = 'Email and password are required.';
+      } else {
+        const fallback = 'Login failed. Please check your email and password.';
+        setErrors({ email: '', password: '', general: fallback });
+        displayMessage = fallback;
+      }
+
+      toast.error(displayMessage);
     } finally {
       setIsLoading(false);
     }
@@ -63,6 +93,7 @@ const LoginPage = () => {
               value={formData.email}
               onChange={handleChange}
               required
+              error={errors.email}
             />
 
             <InputField
@@ -74,7 +105,10 @@ const LoginPage = () => {
               value={formData.password}
               onChange={handleChange}
               required
+              error={errors.password}
             />
+
+            {errors.general && <p className="text-sm text-red-600 -mt-2">{errors.general}</p>}
 
             <Button
               type="submit"

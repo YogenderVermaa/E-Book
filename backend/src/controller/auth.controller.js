@@ -9,9 +9,13 @@ const registerUser = asyncHandler(async (req, res) => {
     throw new ApiError(400, 'All fileds are required');
   }
 
+  if (password.length < 6) {
+    throw new ApiError(400, 'Password must be at least 6 characters long');
+  }
+
   const existedUser = await User.findOne({ email });
   if (existedUser) {
-    throw new ApiError(400, 'User already exists');
+    throw new ApiError(400, 'User already exists with this email');
   }
 
   const newUser = await User.create({

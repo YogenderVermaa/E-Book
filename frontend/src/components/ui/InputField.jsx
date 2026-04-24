@@ -1,4 +1,4 @@
-const InputField = ({ label, name, icon: Icon, className = '', ...props }) => {
+const InputField = ({ label, name, icon: Icon, error, className = '', ...props }) => {
   return (
     <div className="space-y-2">
       {label && (
@@ -16,13 +16,16 @@ const InputField = ({ label, name, icon: Icon, className = '', ...props }) => {
           id={name}
           name={name}
           {...props}
-          className={`w-full h-11 rounded-xl border border-gray-300 bg-white px-3 text-gray-900 
+          className={`w-full h-11 rounded-xl border bg-white px-3 text-gray-900 
           placeholder-gray-400 transition
-          focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-violet-500
+          focus:outline-none focus:ring-2 focus:ring-violet-500
+          ${error ? 'border-red-400 focus:border-red-500 focus:ring-red-200' : 'border-gray-300 focus:border-violet-500'}
           ${Icon ? 'pl-10' : ''}
           ${className}`}
         />
       </div>
+
+      {error && <p className="text-sm text-red-600">{error}</p>}
     </div>
   );
 };
