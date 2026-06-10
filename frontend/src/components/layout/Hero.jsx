@@ -7,7 +7,7 @@ const Hero = () => {
   const { isAuthenticated } = useAuth();
 
   return (
-    <div className="relative bg-gradient-to-br from-violet-50 via-white to-purple-50 overflow-hidden py-20 lg:py-32">
+    <div className="relative bg-gradient-to-br from-violet-50 via-white to-purple-50 overflow-hidden py-8 ">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid lg:grid-cols-2 gap-12 items-center">
           {/* Left Content */}

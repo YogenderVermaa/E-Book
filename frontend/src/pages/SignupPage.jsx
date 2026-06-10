@@ -53,6 +53,7 @@ const SignupPage = () => {
     setIsloading(true);
     try {
       const response = await axiosInstance.post(API_PATHS.AUTH.REGISTER, formData);
+      // console.log(response.data)
       const { token } = response.data.data;
       // console.log('Response:::::', response);
 
@@ -64,6 +65,8 @@ const SignupPage = () => {
       toast.success('Account created successfully!');
       navigate('/dashboard');
     } catch (error) {
+      console.log(error);
+
       const status = error.response?.status;
       const message =
         error.response?.data?.message || 'Unable to sign up right now. Please try again.';
