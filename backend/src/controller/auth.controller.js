@@ -38,7 +38,7 @@ const sendOtp = asyncHandler(async (req, res) => {
   // Delete previous unverified OTPs for this email to avoid confusion
   await Otp.deleteMany({ email: normalizedEmail });
 
-  // Create new OTP record
+  // Create new OTP record in MongoDB
   await Otp.create({
     email: normalizedEmail,
     otp: otpCode,
@@ -46,16 +46,18 @@ const sendOtp = asyncHandler(async (req, res) => {
     attempts: 0,
   });
 
-  // Send OTP Email via Nodemailer
-  const mailResult = await sendOtpEmail(normalizedEmail, otpCode);
+  // Dispatch email in background so slow SMTP / Render network latency never blocks the HTTP response
+  sendOtpEmail(normalizedEmail, otpCode).catch((err) => {
+    console.error(`[Background Mailer Error] ${err.message}`);
+  });
 
+  // Immediately respond to frontend in < 100ms
   return res.status(200).json(
     new ApiResponse(
       200,
       {
         email: normalizedEmail,
         expiresIn: '10 minutes',
-        loggedToConsole: mailResult.loggedToConsole || false,
         cooldownSeconds: 40,
         devOtp: process.env.NODE_ENV !== 'production' ? otpCode : undefined,
       },

@@ -1,3 +1,4 @@
+/* eslint-env node */
 import nodemailer from 'nodemailer';
 
 let transporter = null;
@@ -6,17 +7,37 @@ const getTransporter = () => {
   if (transporter) return transporter;
 
   const emailUser = process.env.EMAIL_USER || 'yogender.tech@gmail.com';
-  const emailPass = process.env.EMAIL_PASS;
+  const emailPass = process.env.EMAIL_PASS ? process.env.EMAIL_PASS.trim() : '';
+  const port = parseInt(process.env.EMAIL_PORT, 10) || 587;
+  const host = process.env.EMAIL_HOST || 'smtp.gmail.com';
+  const isSecure = process.env.EMAIL_SECURE === 'true' || port === 465;
 
-  transporter = nodemailer.createTransport({
-    host: process.env.EMAIL_HOST || 'smtp.gmail.com',
-    port: parseInt(process.env.EMAIL_PORT, 10) || 465,
-    secure: process.env.EMAIL_SECURE !== 'false', // true for 465
-    auth: {
-      user: emailUser,
-      pass: emailPass,
-    },
-  });
+  // Cloud environments (Render, AWS, GCP) prefer port 587 with STARTTLS or service: 'gmail'
+  if (host.includes('gmail.com')) {
+    transporter = nodemailer.createTransport({
+      service: 'gmail',
+      auth: {
+        user: emailUser,
+        pass: emailPass,
+      },
+      connectionTimeout: 5000,
+      greetingTimeout: 5000,
+      socketTimeout: 7000,
+    });
+  } else {
+    transporter = nodemailer.createTransport({
+      host,
+      port,
+      secure: isSecure,
+      auth: {
+        user: emailUser,
+        pass: emailPass,
+      },
+      connectionTimeout: 5000,
+      greetingTimeout: 5000,
+      socketTimeout: 7000,
+    });
+  }
 
   return transporter;
 };
@@ -75,7 +96,7 @@ export const sendOtpEmail = async (toEmail, otp) => {
     </html>
   `;
 
-  // Always log in development/console for instant testing
+  // Always log in console for instant testing and backup
   console.log(`\n==================================================`);
   console.log(`[LifeLog AUTH OTP]`);
   console.log(`Recipient: ${toEmail}`);
@@ -85,24 +106,32 @@ export const sendOtpEmail = async (toEmail, otp) => {
 
   if (!hasValidPass) {
     console.warn(
-      `[Mailer Note] EMAIL_PASS is not set yet in backend/.env. OTP has been logged to console above. Put your Gmail App Password in backend/.env to send live emails to inboxes.`
+      `[Mailer Note] EMAIL_PASS is not set in backend/.env. OTP has been logged to console above.`
     );
     return { success: true, loggedToConsole: true };
   }
 
   try {
     const client = getTransporter();
-    const info = await client.sendMail({
+
+    // Enforce a hard 6-second timeout promise so SMTP never stalls HTTP responses
+    const sendPromise = client.sendMail({
       from: `"LifeLog" <${fromEmail}>`,
       to: toEmail,
       subject,
       html,
     });
+
+    const timeoutPromise = new Promise((_, reject) =>
+      globalThis.setTimeout(() => reject(new Error('Connection timeout (Render SMTP limit)')), 5500)
+    );
+
+    const info = await Promise.race([sendPromise, timeoutPromise]);
     console.log(`[Mailer Success] Email sent to ${toEmail}: messageId=${info.messageId}`);
     return { success: true, messageId: info.messageId };
   } catch (error) {
     console.error(`[Mailer Error] Failed to send email to ${toEmail}:`, error.message);
-    // Return gracefully so user can still test with console OTP during development/configuration
+    // Graceful fallback: return loggedToConsole so user can still test with console OTP
     return { success: false, error: error.message, loggedToConsole: true };
   }
 };
