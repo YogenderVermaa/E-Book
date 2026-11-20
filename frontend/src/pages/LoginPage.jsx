@@ -400,9 +400,10 @@ const LoginPage = () => {
                 )}
 
                 {devConsoleHint && !devOtpCode && (
-                  <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800 text-left">
-                    <strong>Developer Mode:</strong> If your email provider hasn't sent the email
-                    yet, check the backend console terminal for the logged OTP code!
+                  <div className="mb-4 p-3 bg-indigo-50 border border-indigo-200 rounded-xl text-xs text-indigo-900 text-left leading-relaxed">
+                    <strong>Notice:</strong> Your 6-digit code has been dispatched. If your inbox is
+                    delayed or you are testing on Render, you can also view the OTP code instantly
+                    in your backend server logs!
                   </div>
                 )}
 

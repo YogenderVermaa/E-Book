@@ -7,14 +7,26 @@ const getTransporter = () => {
 
   const emailUser = process.env.EMAIL_USER || 'yogender.tech@gmail.com';
   const emailPass = process.env.EMAIL_PASS;
+  const port = parseInt(process.env.EMAIL_PORT, 10) || 587;
+  const isSecure = port === 465 || process.env.EMAIL_SECURE === 'true';
 
   transporter = nodemailer.createTransport({
     host: process.env.EMAIL_HOST || 'smtp.gmail.com',
-    port: parseInt(process.env.EMAIL_PORT, 10) || 465,
-    secure: process.env.EMAIL_SECURE !== 'false', // true for 465
+    port,
+    secure: isSecure, // true for 465, false for 587/STARTTLS
     auth: {
       user: emailUser,
       pass: emailPass,
+    },
+    // Strict timeouts prevent indefinite hanging on Render / Cloud platforms
+    connectionTimeout: 5000,
+    greetingTimeout: 5000,
+    socketTimeout: 5000,
+    dnsTimeout: 5000,
+    // Force IPv4: Render containers often fail routing IPv6 to Google SMTP
+    family: 4,
+    tls: {
+      rejectUnauthorized: false,
     },
   });
 
@@ -23,6 +35,7 @@ const getTransporter = () => {
 
 /**
  * Send 6-digit OTP to user email
+ * Supports HTTPS REST API (Resend) or Nodemailer SMTP with timeouts
  * @param {string} toEmail
  * @param {string} otp
  */
@@ -75,7 +88,7 @@ export const sendOtpEmail = async (toEmail, otp) => {
     </html>
   `;
 
-  // Always log in development/console for instant testing
+  // Always log immediately to console for instant developer & Render log visibility
   console.log(`\n==================================================`);
   console.log(`[LifeLog AUTH OTP]`);
   console.log(`Recipient: ${toEmail}`);
@@ -83,9 +96,41 @@ export const sendOtpEmail = async (toEmail, otp) => {
   console.log(`Expires in: 10 minutes`);
   console.log(`==================================================\n`);
 
+  // 1. If RESEND_API_KEY is configured, send via standard HTTPS (Port 443 - never blocked by Render)
+  if (process.env.RESEND_API_KEY) {
+    try {
+      const fromAddr = process.env.EMAIL_FROM || 'onboarding@resend.dev';
+      const formattedFrom = fromAddr.includes('<') ? fromAddr : `LifeLog <${fromAddr}>`;
+      const res = await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          from: formattedFrom,
+          to: [toEmail],
+          subject,
+          html,
+        }),
+      });
+
+      const resData = await res.json();
+      if (res.ok) {
+        console.log(`[Resend Success] Email sent to ${toEmail}: id=${resData.id}`);
+        return { success: true, messageId: resData.id };
+      } else {
+        console.warn(`[Resend Warning] API error:`, resData);
+      }
+    } catch (apiErr) {
+      console.error(`[Resend API Error]:`, apiErr.message);
+    }
+  }
+
+  // 2. Fallback to Nodemailer SMTP
   if (!hasValidPass) {
     console.warn(
-      `[Mailer Note] EMAIL_PASS is not set yet in backend/.env. OTP has been logged to console above. Put your Gmail App Password in backend/.env to send live emails to inboxes.`
+      `[Mailer Note] EMAIL_PASS is not set yet in backend/.env. OTP has been logged to console above.`
     );
     return { success: true, loggedToConsole: true };
   }
@@ -102,7 +147,6 @@ export const sendOtpEmail = async (toEmail, otp) => {
     return { success: true, messageId: info.messageId };
   } catch (error) {
     console.error(`[Mailer Error] Failed to send email to ${toEmail}:`, error.message);
-    // Return gracefully so user can still test with console OTP during development/configuration
     return { success: false, error: error.message, loggedToConsole: true };
   }
 };

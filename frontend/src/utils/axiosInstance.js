@@ -3,7 +3,7 @@ import axios from 'axios';
 
 const axiosInstance = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL,
-  timeout: 8000,
+  timeout: 30000,
   headers: {
     'Content-Type': 'application/json',
     Accept: 'application/json',
@@ -34,7 +34,7 @@ axiosInstance.interceptors.response.use(
         console.error('Server error. Please try again later.');
       }
     } else if (error.code === 'ECONNABORTED') {
-      console.error('Request timeout.Plese try again');
+      console.error('Request timeout. Please try again.');
     }
 
     return Promise.reject(error);

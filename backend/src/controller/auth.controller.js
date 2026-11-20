@@ -19,12 +19,12 @@ const sendOtp = asyncHandler(async (req, res) => {
 
   const normalizedEmail = email.trim().toLowerCase();
 
-  // Check rate limit: if an OTP was created less than 40 seconds ago
+  // Check rate limit: if an OTP was created less than 25 seconds ago
   const existingOtp = await Otp.findOne({ email: normalizedEmail }).sort({ createdAt: -1 });
   if (existingOtp) {
     const timeSinceLastOtp = (Date.now() - new Date(existingOtp.createdAt).getTime()) / 1000;
-    if (timeSinceLastOtp < 40) {
-      const waitSeconds = Math.ceil(40 - timeSinceLastOtp);
+    if (timeSinceLastOtp < 25) {
+      const waitSeconds = Math.ceil(25 - timeSinceLastOtp);
       throw new ApiError(429, `Please wait ${waitSeconds}s before requesting a new OTP.`, [
         { retryAfter: waitSeconds },
       ]);
@@ -38,7 +38,7 @@ const sendOtp = asyncHandler(async (req, res) => {
   // Delete previous unverified OTPs for this email to avoid confusion
   await Otp.deleteMany({ email: normalizedEmail });
 
-  // Create new OTP record
+  // Create new OTP record in MongoDB
   await Otp.create({
     email: normalizedEmail,
     otp: otpCode,
@@ -46,8 +46,11 @@ const sendOtp = asyncHandler(async (req, res) => {
     attempts: 0,
   });
 
-  // Send OTP Email via Nodemailer
-  const mailResult = await sendOtpEmail(normalizedEmail, otpCode);
+  // Dispatch OTP email asynchronously in background so HTTP response returns in <100ms
+  // This guarantees the browser / axios NEVER times out, even if cloud SMTP is blocked or slow
+  sendOtpEmail(normalizedEmail, otpCode).catch((err) => {
+    console.error(`[Background Mailer Error for ${normalizedEmail}]:`, err.message);
+  });
 
   return res.status(200).json(
     new ApiResponse(
@@ -55,11 +58,14 @@ const sendOtp = asyncHandler(async (req, res) => {
       {
         email: normalizedEmail,
         expiresIn: '10 minutes',
-        loggedToConsole: mailResult.loggedToConsole || false,
-        cooldownSeconds: 40,
-        devOtp: process.env.NODE_ENV !== 'production' ? otpCode : undefined,
+        loggedToConsole: true,
+        cooldownSeconds: 25,
+        devOtp:
+          process.env.NODE_ENV !== 'production' || process.env.ALLOW_DEV_OTP === 'true'
+            ? otpCode
+            : undefined,
       },
-      'OTP sent successfully to your email.'
+      'OTP generated successfully! Please check your email inbox (or server logs).'
     )
   );
 });
