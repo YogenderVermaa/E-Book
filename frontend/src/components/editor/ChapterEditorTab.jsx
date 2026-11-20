@@ -16,6 +16,8 @@ import {
   Eye,
   Edit3,
   Sparkles,
+  Save,
+  Loader2,
 } from 'lucide-react';
 import axiosInstance from '../../utils/axiosInstance';
 import { API_PATHS } from '../../utils/apiPath';
@@ -43,6 +45,8 @@ const ChapterEditorTab = ({
   onChapterChange = () => {},
   onGenerateChapterContent = () => {},
   isGenerating,
+  onSave,
+  isSaving = false,
 }) => {
   const [isPreviewMode, setIsPreviewMode] = useState(false);
   const [isUploadingMedia, setIsUploadingMedia] = useState(false);
@@ -91,31 +95,51 @@ const ChapterEditorTab = ({
     );
   }
 
-  // Handle Photo File Upload
+  // Handle Media File Upload (Photos and Videos)
   const handlePhotoUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
 
+    const isVideo = file.type.startsWith('video/');
     const formData = new window.FormData();
     formData.append('media', file);
 
     setIsUploadingMedia(true);
+    const toastId = toast.loading(
+      isVideo ? 'Uploading video to scrapbook...' : 'Uploading photo to scrapbook...'
+    );
+
     try {
       const response = await axiosInstance.post(API_PATHS.BOOKS.UPLOAD_MEDIA, formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
 
       const url = response.data?.data?.url;
+      const resourceType = response.data?.data?.resourceType;
+      const isDetectedVideo =
+        isVideo || resourceType === 'video' || /\.(mp4|mov|webm|mkv|avi)$/i.test(url || '');
+
       if (url) {
-        const existingPhotos = currentChapter.photos || [];
-        onChapterChange({
-          target: { name: 'photos', value: [...existingPhotos, url] },
-        });
-        toast.success('Photo added to diary scrapbook!');
+        if (isDetectedVideo) {
+          const existingVideos = currentChapter.videos || [];
+          onChapterChange({
+            target: { name: 'videos', value: [...existingVideos, url] },
+          });
+          toast.success('Video clip attached to scrapbook!', { id: toastId });
+        } else {
+          const existingPhotos = currentChapter.photos || [];
+          onChapterChange({
+            target: { name: 'photos', value: [...existingPhotos, url] },
+          });
+          toast.success('Photo added to scrapbook!', { id: toastId });
+        }
+      } else {
+        toast.error('Upload succeeded but no media URL was returned.', { id: toastId });
       }
     } catch (error) {
       console.error('Media upload failed:', error);
-      toast.error('Failed to upload photo.');
+      const msg = error.response?.data?.message || 'Failed to upload media. Please try again.';
+      toast.error(msg, { id: toastId });
     } finally {
       setIsUploadingMedia(false);
       if (e.target) e.target.value = '';
@@ -521,10 +545,30 @@ const ChapterEditorTab = ({
                     </div>
 
                     <div className="flex items-center gap-2">
+                      {onSave && (
+                        <button
+                          type="button"
+                          onClick={onSave}
+                          disabled={isSaving}
+                          className="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-700 hover:bg-amber-800 disabled:opacity-60 text-white rounded-lg text-xs font-serif font-bold transition-colors shadow-2xs cursor-pointer"
+                        >
+                          {isSaving ? (
+                            <>
+                              <Loader2 className="w-3 h-3 animate-spin" />
+                              <span>Saving...</span>
+                            </>
+                          ) : (
+                            <>
+                              <Save className="w-3 h-3" />
+                              <span>Save</span>
+                            </>
+                          )}
+                        </button>
+                      )}
                       <button
                         type="button"
                         onClick={() => setIsPreviewMode(!isPreviewMode)}
-                        className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-serif font-bold transition-colors ${
+                        className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-serif font-bold transition-colors cursor-pointer ${
                           isPreviewMode
                             ? 'bg-amber-600 text-white'
                             : 'bg-stone-100 hover:bg-stone-200 text-stone-700 border border-stone-300'

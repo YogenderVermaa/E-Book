@@ -435,22 +435,39 @@ const updateBook = asyncHandler(async (req, res) => {
   const { chapters, ...diaryData } = req.body;
 
   if (chapters && Array.isArray(chapters)) {
+    const updatedChapterIds = [];
     for (const ch of chapters) {
       if (ch._id) {
         await Chapter.findByIdAndUpdate(ch._id, {
-          title: ch.title,
-          description: ch.description,
-          content: ch.content,
+          title: ch.title || 'Untitled Entry',
+          description: ch.description || '',
+          content: ch.content || '',
           date: ch.date ? new Date(ch.date) : undefined,
           mood: ch.mood,
           weather: ch.weather,
           timeOfDay: ch.timeOfDay,
           location: ch.location,
-          photos: ch.photos,
-          videos: ch.videos,
+          photos: Array.isArray(ch.photos) ? ch.photos : [],
+          videos: Array.isArray(ch.videos) ? ch.videos : [],
         });
+        updatedChapterIds.push(ch._id);
+      } else {
+        const newCh = await Chapter.create({
+          title: ch.title || 'Untitled Entry',
+          description: ch.description || '',
+          content: ch.content || '',
+          date: ch.date ? new Date(ch.date) : new Date(),
+          mood: ch.mood || diary.mood || 'Daily Life',
+          weather: ch.weather || 'Sunny',
+          timeOfDay: ch.timeOfDay || 'Morning',
+          location: ch.location || '',
+          photos: Array.isArray(ch.photos) ? ch.photos : [],
+          videos: Array.isArray(ch.videos) ? ch.videos : [],
+        });
+        updatedChapterIds.push(newCh._id);
       }
     }
+    diaryData.chapters = updatedChapterIds;
   }
 
   if (diaryData.accessType !== undefined) {

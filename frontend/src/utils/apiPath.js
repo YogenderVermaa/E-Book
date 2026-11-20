@@ -26,6 +26,7 @@ export const API_PATHS = {
     UPDATE_BOOK: '/api/book',
     DELETE_BOOK: '/api/book',
     UPDATE_COVER: '/api/book/cover',
+    UPLOAD_MEDIA: '/api/book/upload-media',
   },
   PAYMENT: {
     CREATE_ORDER: '/api/payment/create-order',

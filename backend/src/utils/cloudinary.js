@@ -3,9 +3,9 @@ import { v2 as cloudinary } from 'cloudinary';
 import fs from 'fs';
 
 cloudinary.config({
-  cloud_name: process.env.CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_SECRET,
+  cloud_name: process.env.CLOUD_NAME || 'dpj2uojpf',
+  api_key: process.env.CLOUDINARY_API_KEY || '635646673456575',
+  api_secret: process.env.CLOUDINARY_SECRET || '9HvEfl_d2-B29KXTqalhjAjM40w',
 });
 
 const uploadOnCloudinary = async (localfile) => {
@@ -14,11 +14,15 @@ const uploadOnCloudinary = async (localfile) => {
     const uploadResult = await cloudinary.uploader.upload(localfile, {
       resource_type: 'auto',
     });
-    fs.unlinkSync(localfile);
+    if (fs.existsSync(localfile)) {
+      fs.unlinkSync(localfile);
+    }
     return uploadResult;
   } catch (error) {
-    console.log('cloudinary upload error', error);
-    fs.unlinkSync(localfile);
+    console.error('cloudinary upload error:', error);
+    if (fs.existsSync(localfile)) {
+      fs.unlinkSync(localfile);
+    }
     return null;
   }
 };

@@ -57,15 +57,22 @@ const EditorPage = () => {
 
   const handleChapterChange = (e) => {
     const { name, value } = e.target;
-    const updated = [...book.chapters];
-    updated[selectedChapterIndex][name] = value;
-    setBook((prev) => ({ ...prev, chapters: updated }));
+    setBook((prev) => {
+      const updated = [...prev.chapters];
+      if (updated[selectedChapterIndex]) {
+        updated[selectedChapterIndex] = {
+          ...updated[selectedChapterIndex],
+          [name]: value,
+        };
+      }
+      return { ...prev, chapters: updated };
+    });
   };
 
   const handleAddChapter = () => {
     const updated = [
       ...book.chapters,
-      { title: `Chapter ${book.chapters.length + 1}`, content: '' },
+      { title: `Chapter ${book.chapters.length + 1}`, content: '', photos: [], videos: [] },
     ];
     setBook((prev) => ({ ...prev, chapters: updated }));
     setSelectedChapterIndex(updated.length - 1);
@@ -89,8 +96,9 @@ const EditorPage = () => {
 
   const handleSaveChanges = async () => {
     setIsSaving(true);
+    const toastId = toast.loading('Saving diary changes...');
     try {
-      await axiosInstance.put(`${API_PATHS.BOOKS.UPDATE_BOOK}/${bookId}`, {
+      const response = await axiosInstance.put(`${API_PATHS.BOOKS.UPDATE_BOOK}/${bookId}`, {
         title: book.title,
         subtitle: book.subtitle,
         category: book.category,
@@ -105,10 +113,18 @@ const EditorPage = () => {
         freePreviewEntries: Number(book.freePreviewEntries) || 2,
         chapters: book.chapters,
       });
-      toast.success('Diary saved successfully!');
+
+      if (response.data?.data) {
+        setBook((prev) => ({
+          ...prev,
+          ...response.data.data,
+          chapters: response.data.data.chapters || prev.chapters,
+        }));
+      }
+      toast.success('Diary saved successfully!', { id: toastId });
     } catch (error) {
       console.error('Save failed:', error);
-      toast.error(error.response?.data?.message || 'Failed to save changes.');
+      toast.error(error.response?.data?.message || 'Failed to save changes.', { id: toastId });
     } finally {
       setIsSaving(false);
     }

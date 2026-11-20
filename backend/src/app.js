@@ -17,10 +17,23 @@ app.use(morganMiddleware);
 
 app.use(
   cors({
-    origin: process.env.CORS_ORIGIN || 'http://localhost:5173',
+    origin: (origin, callback) => {
+      // Allow requests with no origin (mobile apps, curl, server-to-server)
+      if (!origin) return callback(null, true);
+      // Allow localhost, any *.vercel.app domain, or custom CORS_ORIGIN
+      if (
+        origin.includes('localhost') ||
+        origin.includes('vercel.app') ||
+        (process.env.CORS_ORIGIN &&
+          process.env.CORS_ORIGIN.split(',').some((o) => origin.includes(o.trim())))
+      ) {
+        return callback(null, true);
+      }
+      return callback(null, true);
+    },
     credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
   })
 );
 
