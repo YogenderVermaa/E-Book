@@ -127,7 +127,38 @@ export const sendOtpEmail = async (toEmail, otp) => {
     }
   }
 
-  // 2. Fallback to Nodemailer SMTP
+  // 2. If BREVO_API_KEY is configured, send via Brevo HTTPS REST API (Port 443)
+  if (process.env.BREVO_API_KEY) {
+    try {
+      const fromAddr = process.env.EMAIL_USER || 'yogender.tech@gmail.com';
+      const res = await fetch('https://api.brevo.com/v3/smtp/email', {
+        method: 'POST',
+        headers: {
+          'api-key': process.env.BREVO_API_KEY,
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+        },
+        body: JSON.stringify({
+          sender: { name: 'LifeLog', email: fromAddr },
+          to: [{ email: toEmail }],
+          subject,
+          htmlContent: html,
+        }),
+      });
+
+      const resData = await res.json();
+      if (res.ok) {
+        console.log(`[Brevo Success] Email sent to ${toEmail}: messageId=${resData.messageId}`);
+        return { success: true, messageId: resData.messageId };
+      } else {
+        console.warn(`[Brevo Warning] API error:`, resData);
+      }
+    } catch (apiErr) {
+      console.error(`[Brevo API Error]:`, apiErr.message);
+    }
+  }
+
+  // 3. Fallback to Nodemailer SMTP
   if (!hasValidPass) {
     console.warn(
       `[Mailer Note] EMAIL_PASS is not set yet in backend/.env. OTP has been logged to console above.`
@@ -146,7 +177,13 @@ export const sendOtpEmail = async (toEmail, otp) => {
     console.log(`[Mailer Success] Email sent to ${toEmail}: messageId=${info.messageId}`);
     return { success: true, messageId: info.messageId };
   } catch (error) {
-    console.error(`[Mailer Error] Failed to send email to ${toEmail}:`, error.message);
+    if (error.message.includes('timeout') || error.message.includes('ETIMEDOUT')) {
+      console.warn(
+        `[Mailer Notice] Outbound SMTP connection to ${process.env.EMAIL_HOST || 'smtp.gmail.com'} timed out. Note: Cloud hosts like Render block direct SMTP ports (465/587). The OTP is logged above (${otp}). To send live emails to inboxes on Render, add RESEND_API_KEY or BREVO_API_KEY to your Render Environment variables, or set ALLOW_DEV_OTP=true.`
+      );
+    } else {
+      console.error(`[Mailer Error] Failed to send email to ${toEmail}:`, error.message);
+    }
     return { success: false, error: error.message, loggedToConsole: true };
   }
 };
