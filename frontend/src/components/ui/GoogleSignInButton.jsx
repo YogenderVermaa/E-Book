@@ -4,7 +4,11 @@ import toast from 'react-hot-toast';
 import axiosInstance from '../../utils/axiosInstance';
 import { API_PATHS } from '../../utils/apiPath';
 import { useAuth } from '../../context/AuthContext';
-import { Mail, ArrowRight, Loader2, Sparkles } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
+
+const GOOGLE_CLIENT_ID =
+  import.meta.env.VITE_GOOGLE_CLIENT_ID ||
+  '840271893545-2ptnpk3if9ti0pntg5ff5g2dtebbl71m.apps.googleusercontent.com';
 
 const GoogleIcon = () => (
   <svg className="w-5 h-5 flex-shrink-0" viewBox="0 0 24 24">
@@ -27,42 +31,40 @@ const GoogleIcon = () => (
   </svg>
 );
 
-const GoogleSignInButton = ({ text = 'Continue with Google', className = '' }) => {
+const GoogleSignInButton = ({
+  text = 'Continue with Google',
+  textType = 'continue_with',
+  className = '',
+}) => {
   const [isLoading, setIsLoading] = useState(false);
   const [isRendered, setIsRendered] = useState(false);
-  const [showDevModal, setShowDevModal] = useState(false);
-  const [devEmail, setDevEmail] = useState('yogender.tech@gmail.com');
-  const [devName, setDevName] = useState('Yogender Verma');
   const googleBtnRef = useRef(null);
+  const tokenClientRef = useRef(null);
   const { login } = useAuth();
   const navigate = useNavigate();
 
-  const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
-
-  const handleGoogleCredentialResponse = useCallback(
-    async (response) => {
-      if (!response?.credential) return;
-
+  // Send verified credential or access_token to backend
+  const handleAuthPayload = useCallback(
+    async (payload) => {
       setIsLoading(true);
-      const toastId = toast.loading('Signing in with Google...');
+      const toastId = toast.loading('Authenticating with Google...');
 
       try {
-        const res = await axiosInstance.post(API_PATHS.AUTH.GOOGLE, {
-          credential: response.credential,
-        });
-
+        const res = await axiosInstance.post(API_PATHS.AUTH.GOOGLE, payload);
         const { user, token, isNewUser } = res.data.data;
         login(user, token);
 
-        toast.success(isNewUser ? 'Welcome to LifeLog!' : 'Signed in with Google!', {
-          id: toastId,
-        });
+        toast.success(
+          isNewUser ? `Welcome to LifeLog, ${user.name}!` : `Welcome back, ${user.name}!`,
+          { id: toastId }
+        );
         navigate('/dashboard');
       } catch (err) {
         console.error('Google sign-in error:', err);
-        toast.error(err.response?.data?.message || 'Google sign-in failed. Please try again.', {
-          id: toastId,
-        });
+        const message =
+          err.response?.data?.message ||
+          'Google authentication failed. Please check your connection and try again.';
+        toast.error(message, { id: toastId });
       } finally {
         setIsLoading(false);
       }
@@ -70,119 +72,129 @@ const GoogleSignInButton = ({ text = 'Continue with Google', className = '' }) =
     [login, navigate]
   );
 
-  // Initialize Google Identity Services when script & client ID are available
+  // Callback for Google Identity Services ID Token
+  const handleCredentialResponse = useCallback(
+    async (response) => {
+      if (!response?.credential) return;
+      await handleAuthPayload({ credential: response.credential });
+    },
+    [handleAuthPayload]
+  );
+
+  // Initialize Google Identity Services
   useEffect(() => {
-    const initGoogle = () => {
-      if (typeof window === 'undefined' || !window.google?.accounts?.id || !googleClientId) {
+    let checkInterval = null;
+
+    const setupGoogleAuth = () => {
+      if (typeof window === 'undefined' || !window.google?.accounts) {
         return false;
       }
 
       try {
+        // 1. Initialize Google ID Token Client
         window.google.accounts.id.initialize({
-          client_id: googleClientId,
-          callback: handleGoogleCredentialResponse,
+          client_id: GOOGLE_CLIENT_ID,
+          callback: handleCredentialResponse,
           auto_select: false,
+          cancel_on_tap_outside: true,
         });
 
+        // 2. Render Official Google Sign-In Button inside ref
         if (googleBtnRef.current) {
           googleBtnRef.current.innerHTML = '';
           window.google.accounts.id.renderButton(googleBtnRef.current, {
             theme: 'outline',
             size: 'large',
             width: 320,
-            text: 'continue_with',
+            text: textType,
             shape: 'rectangular',
             logo_alignment: 'left',
           });
           setIsRendered(true);
         }
+
+        // 3. Initialize OAuth 2.0 Token Client for custom button trigger
+        if (window.google.accounts.oauth2) {
+          tokenClientRef.current = window.google.accounts.oauth2.initTokenClient({
+            client_id: GOOGLE_CLIENT_ID,
+            scope: 'openid email profile',
+            callback: (tokenResponse) => {
+              if (tokenResponse?.access_token) {
+                handleAuthPayload({ access_token: tokenResponse.access_token });
+              } else if (tokenResponse?.error) {
+                console.warn('OAuth popup dismissed or error:', tokenResponse.error);
+              }
+            },
+          });
+        }
+
         return true;
       } catch (err) {
-        console.warn('Google Identity initialization error:', err);
+        console.warn('Error setting up Google Auth:', err);
         return false;
       }
     };
 
-    if (!initGoogle()) {
-      const interval = setInterval(() => {
-        if (initGoogle()) clearInterval(interval);
-      }, 250);
-      return () => clearInterval(interval);
-    }
-  }, [googleClientId, handleGoogleCredentialResponse]);
-
-  const handleButtonClick = () => {
-    // If native Google button is rendered, trigger its click
-    if (googleBtnRef.current && isRendered) {
-      const innerBtn = googleBtnRef.current.querySelector('div[role="button"], button');
-      if (innerBtn) {
-        innerBtn.click();
-        return;
-      }
+    if (!setupGoogleAuth()) {
+      checkInterval = setInterval(() => {
+        if (setupGoogleAuth()) {
+          clearInterval(checkInterval);
+        }
+      }, 200);
     }
 
-    if (googleClientId && window.google?.accounts?.id) {
-      try {
-        window.google.accounts.id.prompt();
-        return;
-      } catch (err) {
-        console.warn('Prompt error:', err);
-      }
-    }
+    return () => {
+      if (checkInterval) clearInterval(checkInterval);
+    };
+  }, [handleCredentialResponse, handleAuthPayload, textType]);
 
-    // Direct login fallback
-    setShowDevModal(true);
-  };
-
-  const handleDirectGoogleLogin = async (e) => {
-    if (e) e.preventDefault();
-    if (!devEmail || !devEmail.includes('@')) {
-      toast.error('Please enter a valid Google email address');
+  // Click handler for fallback button: triggers standard OAuth 2.0 popup
+  const handleTriggerOAuth = () => {
+    if (tokenClientRef.current) {
+      tokenClientRef.current.requestAccessToken({ prompt: 'select_account' });
       return;
     }
 
-    setIsLoading(true);
-    const toastId = toast.loading('Connecting Google account...');
-
-    try {
-      const res = await axiosInstance.post(API_PATHS.AUTH.GOOGLE, {
-        email: devEmail.trim(),
-        name: devName.trim() || devEmail.split('@')[0],
-      });
-
-      const { user, token, isNewUser } = res.data.data;
-      login(user, token);
-
-      toast.success(isNewUser ? 'Welcome to LifeLog!' : 'Signed in with Google!', {
-        id: toastId,
-      });
-      setShowDevModal(false);
-      navigate('/dashboard');
-    } catch (err) {
-      console.error('Google direct login error:', err);
-      toast.error(err.response?.data?.message || 'Google sign-in failed. Please try again.', {
-        id: toastId,
-      });
-    } finally {
-      setIsLoading(false);
+    if (window.google?.accounts?.id) {
+      window.google.accounts.id.prompt();
+      return;
     }
+
+    // Direct OAuth redirect standard fallback
+    const redirectUri = window.location.origin + '/login';
+    const oauthUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${GOOGLE_CLIENT_ID}&redirect_uri=${encodeURIComponent(
+      redirectUri
+    )}&response_type=token&scope=openid%20email%20profile&prompt=select_account`;
+    window.location.href = oauthUrl;
   };
 
+  // Catch hash token if redirected via OAuth implicit flow
+  useEffect(() => {
+    if (typeof window !== 'undefined' && window.location.hash) {
+      const params = new window.URLSearchParams(window.location.hash.substring(1));
+      const accessToken = params.get('access_token');
+      if (accessToken) {
+        window.history.replaceState(null, '', window.location.pathname);
+        handleAuthPayload({ access_token: accessToken });
+      }
+    }
+  }, [handleAuthPayload]);
+
   return (
-    <div className={`w-full ${className}`}>
-      {/* Container for Official Google Button */}
+    <div className={`w-full flex flex-col items-center ${className}`}>
+      {/* Official Google Identity Button (Google iframe) */}
       <div
         ref={googleBtnRef}
-        className={`w-full flex justify-center ${isRendered ? 'block' : 'hidden'}`}
+        className={`w-full flex justify-center min-h-[44px] ${isRendered ? 'flex' : 'hidden'}`}
       />
 
-      {/* Custom styled Google Button shown when native button is loading or as fallback */}
+      {/* Styled Google Button (displayed while script loads or if iframe hidden) */}
       {!isRendered && (
         <button
           type="button"
-          onClick={handleButtonClick}
+          onClick={handleTriggerOAuth}
           disabled={isLoading}
-          className="w-full py-3.5 px-4 bg-white hover:bg-gray-50 text-gray-800 font-bold text-sm rounded-2xl border-2 border-gray-200 hover:border-gray-300 shadow-sm hover:shadow-md transition-all duration-200 flex items-center justify-center gap-3 active:scale-[0.99] disabled:opacity-60"
+          className="w-full max-w-[320px] py-3 px-4 bg-white hover:bg-gray-50 text-gray-700 font-medium text-sm rounded-lg border border-gray-300 hover:border-gray-400 shadow-sm transition-all duration-150 flex items-center justify-center gap-3 active:scale-[0.99] disabled:opacity-60"
         >
           {isLoading ? (
             <>
@@ -196,85 +208,6 @@ const GoogleSignInButton = ({ text = 'Continue with Google', className = '' }) =
             </>
           )}
         </button>
-      )}
-
-      {/* 1-Click Google Sign-in Modal (Instant testing without waiting for GCP console setup) */}
-      {showDevModal && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 sm:p-8 shadow-2xl border border-gray-100 animate-in fade-in zoom-in-95 duration-200">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-12 h-12 rounded-2xl bg-gray-50 border border-gray-200 flex items-center justify-center shadow-xs">
-                <GoogleIcon />
-              </div>
-              <div>
-                <h3 className="text-lg font-black text-gray-900">Sign in with Google</h3>
-                <p className="text-xs text-gray-500">1-Click instant authentication</p>
-              </div>
-            </div>
-
-            <p className="text-xs text-gray-600 mb-5 leading-relaxed bg-indigo-50/70 p-3.5 rounded-xl border border-indigo-100">
-              <Sparkles className="w-3.5 h-3.5 text-indigo-600 inline mr-1" />
-              Sign in directly with your Google account. No passwords, no email delays, and no SMTP
-              ports required!
-            </p>
-
-            <form onSubmit={handleDirectGoogleLogin} className="space-y-4">
-              <div>
-                <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">
-                  Your Google Email
-                </label>
-                <div className="relative">
-                  <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                  <input
-                    type="email"
-                    required
-                    value={devEmail}
-                    onChange={(e) => setDevEmail(e.target.value)}
-                    placeholder="yogender.tech@gmail.com"
-                    className="w-full pl-10 pr-3.5 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium text-gray-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 font-mono"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">
-                  Display Name
-                </label>
-                <input
-                  type="text"
-                  value={devName}
-                  onChange={(e) => setDevName(e.target.value)}
-                  placeholder="Yogender Verma"
-                  className="w-full px-3.5 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium text-gray-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                />
-              </div>
-
-              <div className="pt-2 flex gap-3">
-                <button
-                  type="button"
-                  onClick={() => setShowDevModal(false)}
-                  className="flex-1 py-3 px-4 rounded-xl border border-gray-200 text-sm font-bold text-gray-600 hover:bg-gray-100 transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={isLoading}
-                  className="flex-1 py-3 px-4 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 text-white text-sm font-bold hover:from-indigo-700 hover:to-violet-700 shadow-md shadow-indigo-500/20 transition-all flex items-center justify-center gap-1.5"
-                >
-                  {isLoading ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <>
-                      <span>Continue</span>
-                      <ArrowRight className="w-4 h-4" />
-                    </>
-                  )}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
       )}
     </div>
   );

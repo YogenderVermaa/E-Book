@@ -249,44 +249,57 @@ const updateUserProfile = asyncHandler(async (req, res) => {
 
 /**
  * Sign in or Sign up with Google OAuth
+ * Supports standard Google ID token (credential) and OAuth2 access_token
  */
 const googleAuth = asyncHandler(async (req, res) => {
-  const { credential, email: devEmail, name: devName, avatar: devAvatar } = req.body;
+  const { credential, access_token, token: incomingToken } = req.body;
+  const rawCredential = credential || incomingToken;
+  const rawAccessToken = access_token;
 
   let email = '';
   let name = '';
   let picture = '';
   let googleId = '';
 
-  if (credential) {
-    // Verify credential with Google OAuth2 TokenInfo API
+  // 1. Try Google ID token verification (TokenInfo API)
+  if (rawCredential) {
     try {
       const googleRes = await fetch(
-        `https://oauth2.googleapis.com/tokeninfo?id_token=${credential}`
+        `https://oauth2.googleapis.com/tokeninfo?id_token=${rawCredential}`
       );
-      if (!googleRes.ok) {
-        throw new Error('Invalid Google credential token');
+      if (googleRes.ok) {
+        const payload = await googleRes.json();
+        email = payload.email?.toLowerCase().trim();
+        name = payload.name;
+        picture = payload.picture;
+        googleId = payload.sub;
       }
-      const payload = await googleRes.json();
-      email = payload.email?.toLowerCase().trim();
-      name = payload.name;
-      picture = payload.picture;
-      googleId = payload.sub;
     } catch (err) {
-      console.error('Google token verification error:', err.message);
-      throw new ApiError(400, 'Failed to verify Google account. Please try again.');
+      console.warn('Google ID token verification failed:', err.message);
     }
-  } else if (devEmail) {
-    // Quick / fallback Google sign-in
-    email = devEmail.toLowerCase().trim();
-    name = devName || email.split('@')[0];
-    picture = devAvatar || '';
-  } else {
-    throw new ApiError(400, 'Google credential is required');
+  }
+
+  // 2. Try Google OAuth2 access token verification (UserInfo API)
+  if (!email && (rawAccessToken || rawCredential)) {
+    const bearerToken = rawAccessToken || rawCredential;
+    try {
+      const userRes = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+        headers: { Authorization: `Bearer ${bearerToken}` },
+      });
+      if (userRes.ok) {
+        const payload = await userRes.json();
+        email = payload.email?.toLowerCase().trim();
+        name = payload.name;
+        picture = payload.picture;
+        googleId = payload.sub;
+      }
+    } catch (err) {
+      console.warn('Google UserInfo verification failed:', err.message);
+    }
   }
 
   if (!email || !EMAIL_REGEX.test(email)) {
-    throw new ApiError(400, 'A valid email is required from Google sign-in');
+    throw new ApiError(400, 'Unable to authenticate with Google. Please try again.');
   }
 
   // Find or create user
