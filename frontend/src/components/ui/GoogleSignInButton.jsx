@@ -29,6 +29,7 @@ const GoogleIcon = () => (
 
 const GoogleSignInButton = ({ text = 'Continue with Google', className = '' }) => {
   const [isLoading, setIsLoading] = useState(false);
+  const [isRendered, setIsRendered] = useState(false);
   const [showDevModal, setShowDevModal] = useState(false);
   const [devEmail, setDevEmail] = useState('yogender.tech@gmail.com');
   const [devName, setDevName] = useState('Yogender Verma');
@@ -71,32 +72,55 @@ const GoogleSignInButton = ({ text = 'Continue with Google', className = '' }) =
 
   // Initialize Google Identity Services when script & client ID are available
   useEffect(() => {
-    if (typeof window === 'undefined' || !window.google?.accounts?.id || !googleClientId) {
-      return;
-    }
-
-    try {
-      window.google.accounts.id.initialize({
-        client_id: googleClientId,
-        callback: handleGoogleCredentialResponse,
-        auto_select: false,
-      });
-
-      if (googleBtnRef.current) {
-        window.google.accounts.id.renderButton(googleBtnRef.current, {
-          theme: 'outline',
-          size: 'large',
-          width: 320,
-          text: 'continue_with',
-          shape: 'pill',
-        });
+    const initGoogle = () => {
+      if (typeof window === 'undefined' || !window.google?.accounts?.id || !googleClientId) {
+        return false;
       }
-    } catch (err) {
-      console.warn('Google Identity initialization error:', err);
+
+      try {
+        window.google.accounts.id.initialize({
+          client_id: googleClientId,
+          callback: handleGoogleCredentialResponse,
+          auto_select: false,
+        });
+
+        if (googleBtnRef.current) {
+          googleBtnRef.current.innerHTML = '';
+          window.google.accounts.id.renderButton(googleBtnRef.current, {
+            theme: 'outline',
+            size: 'large',
+            width: 320,
+            text: 'continue_with',
+            shape: 'rectangular',
+            logo_alignment: 'left',
+          });
+          setIsRendered(true);
+        }
+        return true;
+      } catch (err) {
+        console.warn('Google Identity initialization error:', err);
+        return false;
+      }
+    };
+
+    if (!initGoogle()) {
+      const interval = setInterval(() => {
+        if (initGoogle()) clearInterval(interval);
+      }, 250);
+      return () => clearInterval(interval);
     }
   }, [googleClientId, handleGoogleCredentialResponse]);
 
   const handleButtonClick = () => {
+    // If native Google button is rendered, trigger its click
+    if (googleBtnRef.current && isRendered) {
+      const innerBtn = googleBtnRef.current.querySelector('div[role="button"], button');
+      if (innerBtn) {
+        innerBtn.click();
+        return;
+      }
+    }
+
     if (googleClientId && window.google?.accounts?.id) {
       try {
         window.google.accounts.id.prompt();
@@ -106,7 +130,7 @@ const GoogleSignInButton = ({ text = 'Continue with Google', className = '' }) =
       }
     }
 
-    // If Google Client ID is not configured yet, open quick 1-click Google direct login
+    // Direct login fallback
     setShowDevModal(true);
   };
 
@@ -146,28 +170,33 @@ const GoogleSignInButton = ({ text = 'Continue with Google', className = '' }) =
 
   return (
     <div className={`w-full ${className}`}>
-      {/* Primary Google Button */}
-      <button
-        type="button"
-        onClick={handleButtonClick}
-        disabled={isLoading}
-        className="w-full py-3.5 px-4 bg-white hover:bg-gray-50 text-gray-800 font-bold text-sm rounded-2xl border-2 border-gray-200 hover:border-gray-300 shadow-sm hover:shadow-md transition-all duration-200 flex items-center justify-center gap-3 active:scale-[0.99] disabled:opacity-60"
-      >
-        {isLoading ? (
-          <>
-            <Loader2 className="w-5 h-5 text-indigo-600 animate-spin" />
-            <span>Connecting Google...</span>
-          </>
-        ) : (
-          <>
-            <GoogleIcon />
-            <span>{text}</span>
-          </>
-        )}
-      </button>
+      {/* Container for Official Google Button */}
+      <div
+        ref={googleBtnRef}
+        className={`w-full flex justify-center ${isRendered ? 'block' : 'hidden'}`}
+      />
 
-      {/* Hidden container for native Google Identity Button when Client ID is set */}
-      {googleClientId && <div ref={googleBtnRef} className="hidden" />}
+      {/* Custom styled Google Button shown when native button is loading or as fallback */}
+      {!isRendered && (
+        <button
+          type="button"
+          onClick={handleButtonClick}
+          disabled={isLoading}
+          className="w-full py-3.5 px-4 bg-white hover:bg-gray-50 text-gray-800 font-bold text-sm rounded-2xl border-2 border-gray-200 hover:border-gray-300 shadow-sm hover:shadow-md transition-all duration-200 flex items-center justify-center gap-3 active:scale-[0.99] disabled:opacity-60"
+        >
+          {isLoading ? (
+            <>
+              <Loader2 className="w-5 h-5 text-indigo-600 animate-spin" />
+              <span>Connecting Google...</span>
+            </>
+          ) : (
+            <>
+              <GoogleIcon />
+              <span>{text}</span>
+            </>
+          )}
+        </button>
+      )}
 
       {/* 1-Click Google Sign-in Modal (Instant testing without waiting for GCP console setup) */}
       {showDevModal && (
