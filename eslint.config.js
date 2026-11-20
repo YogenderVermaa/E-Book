@@ -33,6 +33,7 @@ export default [
         fetch: 'readonly',
         URL: 'readonly',
         URLSearchParams: 'readonly',
+        IntersectionObserver: 'readonly',
         Blob: 'readonly',
         File: 'readonly',
         FileReader: 'readonly',
