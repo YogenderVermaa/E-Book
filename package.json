@@ -3,6 +3,10 @@
   "private": true,
   "version": "1.0.0",
   "type": "module",
+  "packageManager": "pnpm@10.28.2",
+  "engines": {
+    "node": ">=20.0.0"
+  },
   "scripts": {
     "build": "pnpm --filter frontend build && node -e \"const fs=require('fs'); try{fs.cpSync('frontend/dist','dist',{recursive:true});}catch(e){}\"",
     "build:frontend": "pnpm --filter frontend build",
