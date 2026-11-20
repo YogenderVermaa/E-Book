@@ -16,6 +16,11 @@ const userSchema = new mongoose.Schema(
       trim: true,
       index: true,
     },
+    googleId: {
+      type: String,
+      default: '',
+      index: true,
+    },
     password: {
       type: String,
       select: false,

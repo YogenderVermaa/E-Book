@@ -1,5 +1,6 @@
 export const API_PATHS = {
   AUTH: {
+    GOOGLE: '/api/auth/google',
     SEND_OTP: '/api/auth/send-otp',
     VERIFY_OTP: '/api/auth/verify-otp',
     GET_PROFILE: '/api/auth/profile',

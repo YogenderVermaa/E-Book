@@ -2,12 +2,16 @@ import { Router } from 'express';
 import {
   sendOtp,
   verifyOtp,
+  googleAuth,
   getProfile,
   updateUserProfile,
 } from '../controller/auth.controller.js';
 import { verifyJWT } from '../middleware/auth.middleware.js';
 
 const router = Router();
+
+// Google 1-Click Authentication
+router.route('/google').post(googleAuth);
 
 // Passwordless Email OTP Authentication
 router.route('/send-otp').post(sendOtp);

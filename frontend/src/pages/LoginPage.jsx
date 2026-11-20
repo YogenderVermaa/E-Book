@@ -15,6 +15,7 @@ import {
 import toast from 'react-hot-toast';
 
 import Button from '../components/ui/Button';
+import GoogleSignInButton from '../components/ui/GoogleSignInButton';
 import { useAuth } from '../context/AuthContext';
 import axiosInstance from '../utils/axiosInstance.js';
 import { API_PATHS } from '../utils/apiPath';
@@ -280,77 +281,90 @@ const LoginPage = () => {
           )}
 
           {step === 1 ? (
-            /* STEP 1: Enter Email */
-            <form onSubmit={handleSendOtp} className="space-y-5">
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-                  Your Email Address
-                </label>
-                <div className="relative">
-                  <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                  <input
-                    type="email"
-                    required
-                    value={email}
-                    onChange={(e) => {
-                      setEmail(e.target.value);
-                      if (errorMessage) setErrorMessage('');
-                    }}
-                    placeholder="you@gmail.com"
-                    autoFocus
-                    className="w-full pl-12 pr-4 py-3.5 bg-gray-50/60 border border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
-                  />
+            /* STEP 1: Enter Email or Google Login */
+            <div>
+              <GoogleSignInButton text="Sign in with Google" className="mb-6" />
+
+              <div className="relative my-6 text-center">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-gray-200" />
                 </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-                  Your Name{' '}
-                  <span className="text-xs font-normal text-gray-400">
-                    (Optional for new creators)
-                  </span>
-                </label>
-                <input
-                  type="text"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="Johnathon alford"
-                  className="w-full px-4 py-3 bg-gray-50/60 border border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
-                />
-              </div>
-
-              {/* Rate Limit Countdown Notice on Step 1 */}
-              {resendCooldown > 0 && (
-                <div className="p-3.5 bg-amber-50 border border-amber-200 rounded-xl flex items-center justify-between text-xs text-amber-900 font-medium">
-                  <div className="flex items-center gap-2">
-                    <Clock className="w-4 h-4 text-amber-600 animate-spin" />
-                    <span>Please wait before requesting again:</span>
-                  </div>
-                  <span className="px-2 py-0.5 bg-amber-200 text-amber-950 font-black rounded-lg">
-                    {resendCooldown}s
-                  </span>
-                </div>
-              )}
-
-              <div className="p-3.5 bg-indigo-50/70 border border-indigo-100 rounded-xl flex items-start gap-2.5 text-xs text-indigo-700">
-                <ShieldCheck className="w-4 h-4 text-indigo-600 flex-shrink-0 mt-0.5" />
-                <span>
-                  No password needed. We'll send a 6-digit OTP to your email for instant sign-in.
+                <span className="relative bg-white px-3 text-xs uppercase tracking-wider text-gray-400 font-bold">
+                  Or continue with email
                 </span>
               </div>
 
-              <Button
-                type="submit"
-                disabled={resendCooldown > 0 || isLoading}
-                isLoading={isLoading}
-                icon={ArrowRight}
-                className="w-full py-3.5 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white font-semibold rounded-xl shadow-lg shadow-indigo-500/25 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
-              >
-                {resendCooldown > 0
-                  ? `Wait ${resendCooldown}s to Request Code`
-                  : 'Send Verification Code'}
-              </Button>
-            </form>
+              <form onSubmit={handleSendOtp} className="space-y-5">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                    Your Email Address
+                  </label>
+                  <div className="relative">
+                    <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                    <input
+                      type="email"
+                      required
+                      value={email}
+                      onChange={(e) => {
+                        setEmail(e.target.value);
+                        if (errorMessage) setErrorMessage('');
+                      }}
+                      placeholder="you@gmail.com"
+                      autoFocus
+                      className="w-full pl-12 pr-4 py-3.5 bg-gray-50/60 border border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                    Your Name{' '}
+                    <span className="text-xs font-normal text-gray-400">
+                      (Optional for new creators)
+                    </span>
+                  </label>
+                  <input
+                    type="text"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="Johnathon alford"
+                    className="w-full px-4 py-3 bg-gray-50/60 border border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
+                  />
+                </div>
+
+                {/* Rate Limit Countdown Notice on Step 1 */}
+                {resendCooldown > 0 && (
+                  <div className="p-3.5 bg-amber-50 border border-amber-200 rounded-xl flex items-center justify-between text-xs text-amber-900 font-medium">
+                    <div className="flex items-center gap-2">
+                      <Clock className="w-4 h-4 text-amber-600 animate-spin" />
+                      <span>Please wait before requesting again:</span>
+                    </div>
+                    <span className="px-2 py-0.5 bg-amber-200 text-amber-950 font-black rounded-lg">
+                      {resendCooldown}s
+                    </span>
+                  </div>
+                )}
+
+                <div className="p-3.5 bg-indigo-50/70 border border-indigo-100 rounded-xl flex items-start gap-2.5 text-xs text-indigo-700">
+                  <ShieldCheck className="w-4 h-4 text-indigo-600 flex-shrink-0 mt-0.5" />
+                  <span>
+                    No password needed. We'll send a 6-digit OTP to your email for instant sign-in.
+                  </span>
+                </div>
+
+                <Button
+                  type="submit"
+                  disabled={resendCooldown > 0 || isLoading}
+                  isLoading={isLoading}
+                  icon={ArrowRight}
+                  className="w-full py-3.5 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white font-semibold rounded-xl shadow-lg shadow-indigo-500/25 transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+                >
+                  {resendCooldown > 0
+                    ? `Wait ${resendCooldown}s to Request Code`
+                    : 'Send Verification Code'}
+                </Button>
+              </form>
+            </div>
           ) : (
             /* STEP 2: Enter 6-Digit OTP */
             <form onSubmit={handleVerifyOtp} className="space-y-6">

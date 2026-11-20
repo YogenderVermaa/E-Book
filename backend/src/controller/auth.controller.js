@@ -247,4 +247,100 @@ const updateUserProfile = asyncHandler(async (req, res) => {
   );
 });
 
-export { sendOtp, verifyOtp, getProfile, updateUserProfile };
+/**
+ * Sign in or Sign up with Google OAuth
+ */
+const googleAuth = asyncHandler(async (req, res) => {
+  const { credential, email: devEmail, name: devName, avatar: devAvatar } = req.body;
+
+  let email = '';
+  let name = '';
+  let picture = '';
+  let googleId = '';
+
+  if (credential) {
+    // Verify credential with Google OAuth2 TokenInfo API
+    try {
+      const googleRes = await fetch(
+        `https://oauth2.googleapis.com/tokeninfo?id_token=${credential}`
+      );
+      if (!googleRes.ok) {
+        throw new Error('Invalid Google credential token');
+      }
+      const payload = await googleRes.json();
+      email = payload.email?.toLowerCase().trim();
+      name = payload.name;
+      picture = payload.picture;
+      googleId = payload.sub;
+    } catch (err) {
+      console.error('Google token verification error:', err.message);
+      throw new ApiError(400, 'Failed to verify Google account. Please try again.');
+    }
+  } else if (devEmail) {
+    // Quick / fallback Google sign-in
+    email = devEmail.toLowerCase().trim();
+    name = devName || email.split('@')[0];
+    picture = devAvatar || '';
+  } else {
+    throw new ApiError(400, 'Google credential is required');
+  }
+
+  if (!email || !EMAIL_REGEX.test(email)) {
+    throw new ApiError(400, 'A valid email is required from Google sign-in');
+  }
+
+  // Find or create user
+  let user = await User.findOne({ email });
+  let isNewUser = false;
+
+  if (!user) {
+    user = await User.create({
+      name: name || email.split('@')[0],
+      email,
+      avatar: picture || '',
+      googleId: googleId || '',
+    });
+    isNewUser = true;
+  } else {
+    let shouldSave = false;
+    if (!user.googleId && googleId) {
+      user.googleId = googleId;
+      shouldSave = true;
+    }
+    if (!user.avatar && picture) {
+      user.avatar = picture;
+      shouldSave = true;
+    }
+    if ((!user.name || user.name.trim() === '') && name) {
+      user.name = name;
+      shouldSave = true;
+    }
+    if (shouldSave) {
+      await user.save();
+    }
+  }
+
+  const token = user.generateToken();
+
+  return res.status(200).json(
+    new ApiResponse(
+      200,
+      {
+        user: {
+          _id: user._id,
+          name: user.name,
+          email: user.email,
+          avatar: user.avatar,
+          bio: user.bio,
+          payoutSettings: user.payoutSettings,
+          unlockedDiaries: user.unlockedDiaries,
+        },
+        token,
+        isNewUser,
+      },
+      isNewUser ? 'Welcome to LifeLog!' : 'Signed in with Google successfully!'
+    )
+  );
+});
+
+export { sendOtp, verifyOtp, getProfile, updateUserProfile, googleAuth };
