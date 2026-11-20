@@ -4,6 +4,8 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
+    "build": "pnpm --filter frontend build && node -e \"const fs=require('fs'); try{fs.cpSync('frontend/dist','dist',{recursive:true});}catch(e){}\"",
+    "build:frontend": "pnpm --filter frontend build",
     "dev:frontend": "pnpm --filter frontend dev",
     "dev:backend": "pnpm --filter backend dev",
     "prepare": "husky install"
