@@ -2,10 +2,7 @@ import mongoose from 'mongoose';
 import { ApiError } from '../utils/api-error.js';
 import { logger } from '../logger/index.js';
 
-// Express error-handling middleware MUST have 4 parameters (err, req, res, next)
-// Otherwise Express treats it as normal middleware and passes (req, res, next)
-// eslint-disable-next-line no-unused-vars
-const errorHandler = (err, req, res, next) => {
+const errorHandler = (err, req, res) => {
   let error = err;
 
   if (!(error instanceof ApiError)) {
@@ -20,12 +17,12 @@ const errorHandler = (err, req, res, next) => {
     error = new ApiError(statusCode, message, error?.errors || [], err.stack);
   }
 
-  // Log error with details
+  // 🔥 LOG ERROR HERE
   logger.error(error.message, {
     statusCode: error.statusCode,
     stack: error.stack,
-    method: req?.method,
-    path: req?.originalUrl,
+    method: req.method,
+    path: req.originalUrl,
   });
 
   const retryAfter =
